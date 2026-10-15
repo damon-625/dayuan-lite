@@ -11,6 +11,7 @@
 - 浏览器企业微信扫码登录，连接器通过云端轮询取得授权。
 - 临近到期时按需刷新账号凭据，再换取企微用户 token，无需常驻刷新进程。
 - 按关键词查群、读取指定会话、在会话内查询关键词。
+- 用同一份用户授权，自动换票后调用企微 CLI 的普通文档搜索/正文、会议列表/详情只读接口。
 - 通过稳定 `request_id` 恢复任务，凭据续期后仍可读取原任务。
 - 通过 stdio MCP 对接支持该协议的 Agent；也可以直接调用 CLI。
 
@@ -32,7 +33,7 @@ git clone https://github.com/lighters/dayuan-lite.git && cd dayuan-lite
 python3 dayuan.py --help
 ```
 
-所有功能都在一个入口里：`dayuan login|finish|renew|status|wecom-login|read|result|serve`。旧的 `python3 workbuddy_auth.py login|finish|renew|status|wecom-login` 仍然可用，作为兼容层调用同一实现。
+所有功能都在一个入口里：`dayuan login|finish|renew|status|wecom-login|read|result|wecom|serve`。旧的 `python3 workbuddy_auth.py login|finish|renew|status|wecom-login` 仍然可用，作为兼容层调用同一实现。
 
 ### 状态目录
 
@@ -82,6 +83,43 @@ dayuan result --wait 60 read-project-001
 
 `--wait N`（0–300 秒，默认 0）让连接器提交后自动用同一 `request_id` 每约 3 秒查询一次，直到离开 `submitted` / `working` 或等待到时；它只轮询，不会重发。等待预算从首次提交/首次结果查询返回后开始；后续轮询的网络超时、授权请求和授权锁共享剩余预算，到时不再发起下一次轮询。首次请求耗时不计入 N；底层网络超时是 I/O 超时，不是整个进程的强制终止时间。到时仍未完成会返回当前状态和 `next_action`，之后用 `result --wait N` 继续。遇到 `outcome_unknown` 不要更换 ID 重发；`rejected`（`retry_safe: true`）表示请求未被远端接受，处理原因后可用同一 ID 重新提交。同一 ID 正在提交时，并发调用返回 `REQUEST_BUSY`；稍后用原 ID 重试。不同查询应使用不同 ID。时间范围必须成对且带时区，`limit` 为 1–50；这是摘要请求约束，不是原始消息数量保证。
 
+## 文档和会议：企微 CLI 用户授权入口
+
+此功能另外需要本机官方 `wecom-cli >= 1.3.4`（已联机验证 1.3.4）。Python 部分仍只用标准库，A2A 消息查询不需要安装企微 CLI。
+
+```bash
+npm install -g @wecom/cli@1.3.4
+wecom-cli --version
+# 使用前面的 dayuan login 完成用户扫码；不需要 wecom-cli auth init
+
+dayuan wecom doc-search --json '{"keywords":["项目","方案"],"limit":5}'
+# 从上述 data.docs 获取普通文档的 docid，传给正文读取：
+dayuan wecom doc-read --json '{"docid":"<搜索返回的docid>","content_type":"text"}'
+
+dayuan wecom meeting-list --json '{"begin_time":"2026-10-12 00:00:00","end_time":"2026-10-15 23:59:59","limit":5}'
+# 从上述列表获取会议标识：
+dayuan wecom meeting-get --json '{"meeting_ids":[{"meeting_id":"<列表返回的meeting_id>"}]}'
+```
+
+每次调用先校验操作与参数、检查 CLI 版本，再调用云端授权模块检查缓存；临近到期时自动刷新账号/重新换取企微用户令牌。令牌只通过该次子进程的环境传递，不输出、不进入命令参数；连接器使用临时空配置目录，移除继承的 CLI 令牌、额外请求头及日志配置，不会回退到已有 Bot 凭据，也不会改动原有 Bot 配置。明确的令牌失效码 `853004` / `853005` 会触发一次重新换票和只读重试，其他失败直接返回机器码。
+
+可用 `--wecom-cli /absolute/path/to/wecom-cli` 指定受信任的官方可执行文件；CLI 和 MCP 也支持本机环境变量 `DAYUAN_WECOM_CLI`。这是程序路径，不是凭据。不要将任意脚本或上游返回的路径配置为 CLI。
+
+| 操作 | 参数与限制 |
+| --- | --- |
+| `doc-search` | `keywords` 非空数组，最多 10 个词、每词最多 200 字符；`search_scope` 可为 `title` / `content` / `title_content`；仅普通 `doc`，自动添加 `doc_types:["doc"]` |
+| `doc-read` | `docid` 必填；`content_type` 为 `text`（默认）或 `markdown` |
+| `meeting-list` | `begin_time` / `end_time` 均必填，`YYYY-MM-DD HH:mm:ss`，按企微接口时间解释；区间最多 31 天 |
+| `meeting-get` | `meeting_ids` 对象数组，1–10 个；对象含 `meeting_id`，周期单场可附 `sub_meeting_id` |
+
+搜索和列表支持 `limit`（默认 10，1–50）及 `cursor`；不会自动翻页。需要更多数据时使用返回游标再次请求，保留覆盖范围说明。JSON 可用 `--json -` 从标准输入读取；不接受任何透传 CLI 参数或写操作。
+
+返回 `{operation, source:"wecom_cli_user_token", read_only:true, data, limitation}`，业务数据在 `data`。CLI 可能将较长正文写入临时文件，连接器只读取该临时目录内的普通文件，将内容放回 `content` 后删除临时目录；不会返回已经失效的本地路径。输入最多 64KB、结果最多 2MiB，超限报错。CLI 调用总预算 60 秒，MCP 30 秒，包含版本检查、授权和子进程执行；超时终止整个 CLI 进程组。底层云端 HTTP 的 I/O 超时仍受操作系统行为影响。
+
+这是用户凭据的替代接入路径，没有延长 Bot 的七天权限。用户授权被撤销、refresh token 到期或刷新结果不确定时，仍需根据错误重新扫码；不能承诺永不重新授权。首批不含智能文档/表格正文、会议转写/录制或任何写接口。
+
+常见错误：`WECOM_CLI_NOT_FOUND` / `WECOM_CLI_VERSION_UNSUPPORTED` 表示需要安装或指定新版 CLI；`LOGIN_REQUIRED*` / `WECOM_AUTH_REQUIRED_OPEN_WECOM_LOGIN` 按原登录流程处理；`WECOM_CLI_TIMEOUT` 保留只读查询条件后稍后重试；`WECOM_CLI_ERROR_<数字>` 是上游业务错误码，原始错误正文不会透出。
+
 ## 在 Grok Bot 中使用
 
 已验证的路径是 **Grok Bot 桌面主助手 → 用户 Mac 的本机执行能力 → Dayuan Lite CLI → 企业微信 A2A**。Grok Bot 的云端电脑和本机不是同一个环境；安装或配置 `grok` 命令行程序也不等于配置了 Grok Bot 桌面应用。
@@ -115,10 +153,13 @@ dayuan serve
 | 工具 | 功能 |
 | --- | --- |
 | `dayuan_status` | 本地状态，不发远端请求 |
+| `dayuan_wecom_read` | 文档/会议同步只读接口，参数为 `operation` 和 `parameters`，每次自动检查用户授权 |
 | `dayuan_read_start` | 提交有界查询，返回任务状态；可选 `wait_seconds` |
 | `dayuan_read_result` | 按 `request_id` 查询已有任务，只读；可选 `wait_seconds` |
 
 两个读取工具都接受 `wait_seconds`（0–30，默认 0）：服务端在本次调用内按同一 `request_id` 轮询，Agent 不必自己循环。上限 30 秒是因为 stdio 服务一次只处理一个调用；仍未完成时用同一 ID 再调一次 `dayuan_read_result`。`initialize` 会返回 `instructions`，向宿主说明「提交 → 用同一 ID 查结果」的流程；`dayuan_status` 与 `dayuan_read_result` 标注了 `readOnlyHint: true`，`dayuan_read_start` 因会创建远端任务和本地回执而不标只读，但标注了 `idempotentHint: true`（同一 ID 只恢复原任务）。
+
+文档/会议工具 `dayuan_wecom_read` 与 A2A 任务不同：同步返回 `data`，无需 `request_id`，也不用 `dayuan_read_result`。宿主的环境需能找到新版 CLI；必要时在 MCP 配置的 `env` 中设置 `DAYUAN_WECOM_CLI` 为绝对路径。该工具标注 `readOnlyHint:true`。
 
 登录只在 CLI 中提供。MCP 通过标准输入输出通信，不监听 HTTP 端口。
 
@@ -157,7 +198,7 @@ dayuan renew
 
 ```bash
 python3 scripts/check.py
-python3 -m unittest test_dayuan.py test_workbuddy_auth.py -v
+python3 -m unittest test_dayuan.py test_workbuddy_auth.py test_wecom_bridge.py -v
 ```
 
 离线测试覆盖统一入口与参数位置、默认状态目录及旧目录迁移提示、打包声明、查询约束、幂等提交、被拒请求重提、服务端有界等待、异常结果恢复、上游异常响应、并发续期、凭据轮换、稳定身份检查和 MCP 握手与工具声明。测试不访问真实账号。GitHub Actions 在 Python 3.9 / 3.12 / 3.13 上运行 `scripts/check.py`（项目约束检查）和全部测试。贡献规范见 [AGENTS.md](AGENTS.md)。

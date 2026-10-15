@@ -24,4 +24,4 @@ jobs:
       - name: Project constraints
         run: python scripts/check.py
       - name: Offline tests
-        run: python -m unittest test_dayuan.py test_workbuddy_auth.py -v
+        run: python -m unittest test_dayuan.py test_workbuddy_auth.py test_wecom_bridge.py -v

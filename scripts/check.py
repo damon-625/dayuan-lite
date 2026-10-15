@@ -6,7 +6,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-LOCAL_MODULES = {"dayuan", "workbuddy_auth"}
+LOCAL_MODULES = {"dayuan", "workbuddy_auth", "wecom_bridge"}
 # Each runtime module talks to exactly one host, through exactly one function.
 RUNTIME = {"dayuan.py": ("qyapi.weixin.qq.com", "request"), "workbuddy_auth.py": ("www.workbuddy.cn", "http")}
 # Modules that would bypass the allowlisted HTTP function or the no-subprocess rule.
@@ -48,6 +48,7 @@ def check_python(path, stdlib):
         report(path, exc.lineno, "not valid Python 3.9 syntax: %s" % exc.msg)
         return
     runtime = RUNTIME.get(path.name) if path.parent == ROOT else None
+    bridge = path.name == "wecom_bridge.py" and path.parent == ROOT
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             names = [alias.name for alias in node.names]
@@ -59,9 +60,9 @@ def check_python(path, stdlib):
             top = name.split(".")[0]
             if stdlib is not None and top not in stdlib and top not in LOCAL_MODULES:
                 report(path, node.lineno, "third-party import '%s'; the project is standard library only" % name)
-            if runtime and top in FORBIDDEN_IMPORTS:
+            if (runtime or bridge) and top in FORBIDDEN_IMPORTS and not (bridge and top == "subprocess"):
                 report(path, node.lineno, "import '%s' bypasses the single allowlisted HTTP function or spawns processes" % name)
-        if isinstance(node, ast.ExceptHandler) and runtime:
+        if isinstance(node, ast.ExceptHandler) and (runtime or bridge):
             caught = node.type
             if caught is None or (isinstance(caught, ast.Name) and caught.id in ("Exception", "BaseException")):
                 report(path, node.lineno, "bare or broad except; catch specific exceptions and map them to an error code")
@@ -70,6 +71,12 @@ def check_python(path, stdlib):
             name = func.attr if isinstance(func, ast.Attribute) else func.id if isinstance(func, ast.Name) else None
             if name in ("breakpoint", "set_trace"):
                 report(path, node.lineno, "debugger call left in code")
+    if bridge:
+        owner = enclosing_functions(tree)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                if node.func.attr in HTTP_CALLS or (node.func.attr in {"Popen", "run", "check_call", "check_output", "call"} and owner.get(node) != "run_cli"):
+                    report(path, node.lineno, "bridge may only spawn the CLI inside run_cli(); no direct HTTP")
     if runtime:
         host, http_function = runtime
         owner = enclosing_functions(tree)

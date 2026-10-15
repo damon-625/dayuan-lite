@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dayuan-lite"
 dynamic = ["version"]
-description = "Lightweight CLI and stdio MCP connector for WeCom Dayuan read-only A2A queries"
+description = "Read-only WeCom Dayuan A2A and user-authorized document/meeting CLI connector"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = []
@@ -23,7 +23,7 @@ Homepage = "https://github.com/lighters/dayuan-lite"
 dayuan = "dayuan:main"
 
 [tool.setuptools]
-py-modules = ["dayuan", "workbuddy_auth"]
+py-modules = ["dayuan", "workbuddy_auth", "wecom_bridge"]
 
 [tool.setuptools.dynamic]
 version = {attr = "dayuan.__version__"}
