@@ -7,6 +7,7 @@ name = "dayuan-lite"
 dynamic = ["version"]
 description = "Read-only WeCom Dayuan A2A and user-authorized document/meeting CLI connector"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 dependencies = []
 classifiers = [
