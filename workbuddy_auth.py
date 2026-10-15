@@ -16,13 +16,13 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-from dayuan import DEFAULT_STATE, Error as StateError, load_private, private_dir, resolve_state, save_private, warn_migration
+from dayuan import DEFAULT_STATE, Error as StateError, __version__, load_private, private_dir, resolve_state, save_private, warn_migration
 
 ORIGIN = 'https://www.workbuddy.cn'
 PREFIX = '/v2/plugin'
 WECOM_LOGIN = ORIGIN + '/login/wecom-auth'
-# Protocol compatibility with the analyzed desktop auth flow. The public page
-# hides WeCom login when platform=workbuddy has no version or a version < 5.8.0.
+# The official login page hides WeCom login when platform=workbuddy has no
+# version or a version < 5.8.0.
 AUTH_FLOW_VERSION = '5.8.2'
 
 
@@ -118,7 +118,7 @@ class CloudAuth:
             (method == 'POST' and re.fullmatch(r'/console/enterprises/[A-Za-z0-9_%.-]+/oneid_openapi/exchange-wecom-token', path))
         )
         if not allowed: raise AuthError('ENDPOINT_NOT_ALLOWED')
-        headers = {'Accept':'application/json', 'Content-Type':'application/json', 'X-Domain':'www.workbuddy.cn', 'X-Product':'SaaS', 'User-Agent':'dayuan-lite/0.2 (local interoperability client)'}
+        headers = {'Accept':'application/json', 'Content-Type':'application/json', 'X-Domain':'www.workbuddy.cn', 'X-Product':'SaaS', 'User-Agent':'dayuan-lite/'+__version__+' (local interoperability client)'}
         if auth: headers['Authorization'] = 'Bearer ' + secret(auth['accessToken'])
         if refresh:
             headers['X-Refresh-Token'] = secret(refresh)

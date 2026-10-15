@@ -1,8 +1,6 @@
 # 架构
 
-Dayuan Lite 使用 Python 标准库实现授权与 A2A 协议，不加载桌面应用、插件或企业微信 SDK。
-
-公开仓库包含独立 Python 实现与测试。
+Dayuan Lite 使用 Python 标准库实现账号授权与 A2A 调用，不需要安装或运行 WorkBuddy 桌面客户端，也不依赖企业微信 SDK。账号授权直接使用 WorkBuddy 官方云端服务，查询直接访问企业微信 A2A。
 
 ## 调用链
 
@@ -39,7 +37,7 @@ sequenceDiagram
 | 企微换票 | `POST /console/enterprises/{enterpriseId}/oneid_openapi/exchange-wecom-token` |
 | 账号续期 | `POST /v2/plugin/auth/token/refresh` |
 
-浏览器登录 URL 使用版本参数 `5.8.2` 和 `force_login_type=wecom`。该版本的官方网页在版本参数缺失或低于 5.8.0 时进入不同的登录流程。参数只用于协议兼容，服务端仍校验实际账号与授权。
+浏览器登录 URL 附带 `version=5.8.2` 和 `force_login_type=wecom`：官方登录页在版本参数缺失或低于 5.8.0 时会进入不同的登录流程。服务端仍校验实际账号与授权。
 
 账号会话通过 Bearer 认证，续期额外使用 `X-Refresh-Token` 和 `X-Auth-Refresh-Source: plugin`。企微换票返回 `access_token`、`expires_in`、`alias_id`、`src_tid`。客户端组合用户与企业标识的哈希作为稳定身份，避免续期后把任务交给其他账号。
 
@@ -54,6 +52,6 @@ sequenceDiagram
 - 提交前原子创建本地回执；不确定的提交结果不会自动再发送。
 - 相同 `request_id`、相同输入用于恢复已有任务；相同 ID、不同输入返回冲突。
 
-## 证据范围
+## 稳定性
 
 本项目依赖上游当前行为，不承诺跨版本稳定，也不提供企业微信原始消息全量同步。
