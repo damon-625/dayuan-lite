@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 import urllib.error
 from unittest.mock import patch
@@ -64,6 +65,51 @@ class DayuanTests(unittest.TestCase):
             self.client.start(QUERY)
             self.assertEqual([c.args[0] for c in request.call_args_list], ["POST", "POST", "GET"])
         self.assertEqual(sorted(p.name for p in (self.root / "requests").iterdir()), ["test-query-001.json"])
+
+    def test_concurrent_rejected_retries_submit_only_once(self):
+        with patch.object(self.client, "request", side_effect=dayuan.Error("AUTH_REQUIRED", definitive=True)):
+            self.client.start(QUERY)
+        loaded = threading.Event()
+        contender_done = threading.Event()
+        original_load = dayuan.load_private
+        errors = []
+        posted = []
+
+        def load(path):
+            value = original_load(path)
+            if threading.current_thread().name == "paused-retry" and value.get("state") == "rejected":
+                loaded.set()
+                if not contender_done.wait(5):
+                    raise AssertionError("contender did not finish")
+            return value
+
+        def request(method, path, body=None):
+            if method == "POST":
+                posted.append(body["message"]["messageId"])
+            return TASK
+
+        def paused_retry():
+            try:
+                self.client.start(QUERY)
+            except (dayuan.Error, AssertionError) as exc:
+                errors.append(str(exc))
+
+        with patch.object(dayuan, "load_private", side_effect=load), patch.object(self.client, "request", side_effect=request):
+            thread = threading.Thread(target=paused_retry, name="paused-retry")
+            thread.start()
+            try:
+                self.assertTrue(loaded.wait(5))
+                try:
+                    self.client.start(QUERY)
+                except dayuan.Error as exc:
+                    self.assertEqual(str(exc), "REQUEST_BUSY")
+            finally:
+                contender_done.set()
+                thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(posted), 1)
+        self.assertEqual(dayuan.load_private(self.client.record_path(QUERY["request_id"]))["task_id"], TASK["id"])
 
     def test_rejected_request_id_still_refuses_changed_query(self):
         with patch.object(self.client, "request", side_effect=dayuan.Error("AUTH_REQUIRED", definitive=True)):
