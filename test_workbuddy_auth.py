@@ -1,4 +1,5 @@
 import json
+import io
 import tempfile
 import threading
 import time
@@ -28,6 +29,27 @@ class CloudAuthTests(unittest.TestCase):
 
     def ready(self):
         self.flow.save({'phase': 'ready', 'auth': {'accessToken': 'account-token', 'refreshToken': 'refresh-1', 'expiresAt': 9e15}, 'account': {'uid': 'u1', 'enterpriseId': 'e1'}})
+
+    def test_auth_network_timeout_uses_shared_poll_deadline(self):
+        flow = auth.CloudAuth(self.flow.state)
+        flow.poll_deadline = 10
+        flow.clock = lambda: 8
+        response = io.BytesIO(b'{"code":0,"data":{}}')
+        with patch("urllib.request.OpenerDirector.open", return_value=response) as network:
+            flow.http("GET", auth.PREFIX + "/account")
+        self.assertEqual(network.call_args.kwargs["timeout"], 2)
+
+    def test_auth_lock_wait_stops_at_shared_poll_deadline(self):
+        flow = auth.CloudAuth(self.flow.state)
+        clock = {"now": 0.0}
+        flow.poll_deadline = 0.15
+        flow.clock = lambda: clock["now"]
+        flow.sleep = lambda seconds: clock.__setitem__("now", clock["now"] + seconds)
+        with patch.object(auth.fcntl, "flock", side_effect=BlockingIOError()), patch.object(auth.time, "monotonic", side_effect=flow.clock), patch.object(auth.time, "sleep", side_effect=flow.sleep):
+            with self.assertRaises(auth.AuthError):
+                with flow.locked():
+                    self.fail("lock must not be acquired")
+        self.assertLessEqual(clock["now"], 0.15)
 
     def test_first_login_poll_and_exchange_without_workbuddy_files(self):
         self.responses = [{'state':'opaque-state','authUrl':'https://www.workbuddy.cn/login?platform=workbuddy&state=opaque-state'}, auth.AuthError('PENDING_11217'), {'accessToken':'account-token','refreshToken':'refresh-1','expiresIn':7200}, {'uid':'u1','enterpriseId':'e1'}, {'access_token':'wecom-token','expires_in':7200,'alias_id':'wu1','src_tid':'wc1'}]

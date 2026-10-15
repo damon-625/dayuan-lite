@@ -27,7 +27,7 @@ DEFAULT_STATE = config_home() / "dayuan-lite"
 LEGACY_STATE = Path(__file__).resolve().parent / ".private"
 CREDENTIAL_FILES = ("cloud-auth.json", "credentials.json")
 MAX_RESPONSE = 2 * 1024 * 1024
-# A stdio MCP server handles one call at a time, so a tool call may block for at most this long.
+# A stdio MCP server handles one call at a time; bound additional polling.
 MCP_MAX_WAIT = 30
 CLI_MAX_WAIT = 300
 POLL_INTERVAL = 3
@@ -188,6 +188,7 @@ class Client:
 
     def __init__(self, state=DEFAULT_STATE, token=None):
         self.state = Path(state)
+        self.poll_deadline = None
         self.token = token or os.environ.get("DAYUAN_ACCESS_TOKEN")
         self.cloud_auth = not self.token and (self.state / "cloud-auth.json").exists()
         self.identity = None
@@ -215,12 +216,22 @@ class Client:
         if self.cloud_auth:
             from workbuddy_auth import CloudAuth, AuthError
             try:
-                credential = CloudAuth(self.state).ensure_wecom()
+                flow = CloudAuth(self.state)
+                flow.poll_deadline, flow.clock, flow.sleep = self.poll_deadline, self.clock, self.sleep
+                credential = flow.ensure_wecom()
             except AuthError as exc:
                 raise Error(str(exc), definitive=True) from None
             self.token = credential['access_token']
             self.identity = credential['identity']
             self.expires_at_ms = credential['expires_at_ms']
+
+    def timeout(self, maximum):
+        if self.poll_deadline is None:
+            return maximum
+        remaining = self.poll_deadline - self.clock()
+        if remaining <= 0:
+            raise Error("WAIT_TIMEOUT")
+        return min(maximum, remaining)
 
     def request(self, method, path, body=None):
         if not ((method == "POST" and path == "/message:send") or (method == "GET" and re.fullmatch(r"/tasks/[A-Za-z0-9_-]{1,200}\?historyLength=0", path))):
@@ -230,7 +241,7 @@ class Client:
             raise Error("AUTH_REQUIRED", definitive=True)
         req = urllib.request.Request(BASE + path, method=method, headers={"Authorization": "Bearer " + self.token, "Accept": "application/json", "Content-Type": "application/json"}, data=json.dumps(body, ensure_ascii=False).encode() if body is not None else None)
         try:
-            with urllib.request.build_opener(NoRedirect()).open(req, timeout=55) as response:
+            with urllib.request.build_opener(NoRedirect()).open(req, timeout=self.timeout(55)) as response:
                 raw = response.read(MAX_RESPONSE + 1)
             if len(raw) > MAX_RESPONSE:
                 raise Error("RESPONSE_TOO_LARGE")
@@ -318,13 +329,20 @@ class Client:
     def wait(self, value, seconds):
         """Poll the same request_id until it leaves submitted/working or the bounded wait ends. Never resubmits."""
         end = self.clock() + seconds
-        while value.get("state") in PENDING_STATES and self.clock() < end:
-            self.sleep(max(0, min(POLL_INTERVAL, end - self.clock())))
-            try:
-                value = self.result(value["request_id"])
-            except Error as exc:
-                # The task was accepted; keep its last known state instead of losing it to a transient poll failure.
-                return {**value, "poll_error": str(exc), "next_action": "稍后用同一 request_id 查询结果；不要换号重发。"}
+        previous = self.poll_deadline
+        self.poll_deadline = end if previous is None else min(end, previous)
+        try:
+            while value.get("state") in PENDING_STATES and self.clock() < self.poll_deadline:
+                self.sleep(max(0, min(POLL_INTERVAL, self.poll_deadline - self.clock())))
+                if self.clock() >= self.poll_deadline:
+                    break
+                try:
+                    value = self.result(value["request_id"])
+                except Error as exc:
+                    # Preserve the accepted task even when a bounded poll fails.
+                    return {**value, "poll_error": str(exc), "next_action": "稍后用同一 request_id 查询结果；不要换号重发。"}
+        finally:
+            self.poll_deadline = previous
         if value.get("state") in PENDING_STATES:
             value = {**value, "next_action": "任务仍在进行。稍后用同一 request_id 查询结果；不要换号重发。"}
         return value
