@@ -165,6 +165,33 @@ class DayuanTests(unittest.TestCase):
             self.assertEqual(self.client.read(QUERY, 0)["state"], "working")
             self.assertEqual(request.call_count, 1)
 
+    def test_wait_does_not_poll_after_sleep_reaches_deadline(self):
+        clock = self.fake_clock()
+        value = {"request_id": QUERY["request_id"], "state": "working"}
+        with patch.object(self.client, "result", return_value=value) as result:
+            self.client.wait(value, 1)
+        self.assertEqual(clock["now"], 1)
+        result.assert_not_called()
+
+    def test_poll_network_timeout_uses_remaining_wait_budget(self):
+        clock = self.fake_clock()
+        working = {**TASK, "status": {"state": "TASK_STATE_WORKING"}, "history": []}
+        with patch.object(self.client, "request", return_value=working):
+            self.client.start(QUERY)
+        timeouts = []
+
+        def network(req, timeout):
+            timeouts.append(timeout)
+            clock["now"] += timeout
+            raise TimeoutError()
+
+        with patch("urllib.request.OpenerDirector.open", side_effect=network):
+            result = self.client.wait({"request_id": QUERY["request_id"], "state": "working"}, 10)
+        self.assertEqual(timeouts, [7])
+        self.assertEqual(clock["now"], 10)
+        self.assertEqual(result["state"], "working")
+        self.assertIsNone(self.client.poll_deadline)
+
     def test_poll_failure_keeps_task_instead_of_resubmitting(self):
         self.fake_clock()
         working = {**TASK, "status": {"state": "TASK_STATE_WORKING"}, "history": []}

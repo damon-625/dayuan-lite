@@ -82,24 +82,33 @@ def fresh(value):
 class CloudAuth:
     # Wait briefly for another process's renewal instead of failing at once.
     LOCK_TIMEOUT = 30
+    clock = staticmethod(time.monotonic)
+    sleep = staticmethod(time.sleep)
 
     def __init__(self, state=DEFAULT_STATE):
         self.state = Path(state)
+        self.poll_deadline = None
         self.path = self.state / 'cloud-auth.json'
+
+    def timeout(self, maximum):
+        if self.poll_deadline is None: return maximum
+        remaining = self.poll_deadline - self.clock()
+        if remaining <= 0: raise AuthError('WAIT_TIMEOUT')
+        return min(maximum, remaining)
 
     @contextmanager
     def locked(self):
         private_dir(self.state)
         fd = os.open(str(self.state / '.auth.lock'), os.O_CREAT | os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0), 0o600)
         try:
-            end = time.monotonic() + self.LOCK_TIMEOUT
+            end = self.clock() + self.timeout(self.LOCK_TIMEOUT)
             while True:
                 try:
                     fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                     break
                 except BlockingIOError:
-                    if time.monotonic() >= end: raise AuthError('AUTH_BUSY') from None
-                    time.sleep(0.1)
+                    if self.clock() >= end: raise AuthError('AUTH_BUSY') from None
+                    self.sleep(min(0.1, end - self.clock()))
             yield
         finally:
             os.close(fd)
@@ -125,7 +134,7 @@ class CloudAuth:
             headers['X-Auth-Refresh-Source'] = 'plugin'
         req = urllib.request.Request(ORIGIN+path, method=method, headers=headers, data=b'{}' if method == 'POST' else None)
         try:
-            with urllib.request.build_opener(NoRedirect()).open(req, timeout=25) as response:
+            with urllib.request.build_opener(NoRedirect()).open(req, timeout=self.timeout(25)) as response:
                 raw = response.read(1024*1024+1)
         except urllib.error.HTTPError as exc:
             # Preserve machine codes only; never reflect a server body with secrets.

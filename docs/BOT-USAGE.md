@@ -48,7 +48,7 @@ Grok Bot 的「你的电脑」与「Bot 的电脑」不同。Mac 上的路径不
 - 最多归纳 3 条，保留可获得的时间、发送者与来源信息；未知信息不要编造
 - 本次 request_id 固定为 bot-read-20261015-001
 
-在本机执行一次（连接器会自己用同一 ID 等待最多 120 秒）：
+在本机执行一次（首次提交返回后，连接器用同一 ID 追加等待最多 120 秒；首次请求耗时另计）：
 env -u DAYUAN_ACCESS_TOKEN "<PYTHON>" "<REPO>/dayuan.py" --state-dir "<STATE>" read --wait 120 --json '{"request_id":"bot-read-20261015-001","operation":"read_chat","chat":"项目讨论群","since":"2026-10-15T00:00:00+08:00","until":"2026-10-15T12:00:00+08:00","limit":3}'
 
 若返回的状态仍是 submitted 或 working，报告当前状态和该 ID，留待稍后用
