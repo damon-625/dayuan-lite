@@ -24,6 +24,8 @@ sequenceDiagram
 
 `workbuddy_auth.py` 管理官方云端会话；`dayuan.py` 管理 A2A、MCP、本地任务回执，并提供统一 CLI 入口 `dayuan`（`login`、`finish`、`renew`、`wecom-login` 转交 `workbuddy_auth.run`）。直接运行 `workbuddy_auth.py` 只是兼容层。状态目录默认 `~/.config/dayuan-lite`。
 
+`wecom_bridge.py` 为第三个运行时模块，单独负责官方 CLI 子进程适配；不直接发 HTTP。`dayuan.py` 按需加载适配器，后者复用 `CloudAuth.ensure_wecom` 的锁、身份检查和续期状态机。第三模块将本次新增的子进程边界与原有两个模块的 HTTP 白名单隔离；Python 仍只用标准库，官方 CLI 是此可选功能的外部依赖。
+
 ## 授权协议
 
 固定云端域名为 `https://www.workbuddy.cn`。
@@ -60,3 +62,20 @@ sequenceDiagram
 ## 稳定性
 
 本项目依赖上游当前行为，不承诺跨版本稳定，也不提供企业微信原始消息全量同步。
+
+## 企微 CLI 适配边界
+
+调用链：CLI `wecom` / MCP `dayuan_wecom_read` → 校验参数白名单 → 官方 CLI 版本检查 → CloudAuth 检查并按需续期 → 临时隔离配置、环境注入用户令牌 → 固定 CLI 只读命令 → 有界 JSON 解析与错误脱敏 → 临时正文文件内联 → 清理进程与临时目录。
+
+| 连接器操作 | 唯一允许的官方 CLI 命令 |
+| --- | --- |
+| `doc-search` | `doc search --json …` |
+| `doc-read` | `doc contents get --json …` |
+| `meeting-list` | `meeting list --json …` |
+| `meeting-get` | `meeting get --json …` |
+
+不新增 HTTP 主机或自建端点。适配器仅在 `run_cli` 通过 `Popen` 启动受信任的 CLI，不使用 shell。继承环境中的全部 `WECOM_CLI_*` 被清除，只设置临时 `WECOM_CLI_CONFIG_DIR` 和当前 `WECOM_CLI_ACCESS_TOKEN`，同时移除 `DAYUAN_ACCESS_TOKEN`。CLI 路径由本机参数或环境指定，MCP 请求不能指定程序路径。版本检查时不注入 token。
+
+标准输出/错误分别限 2MiB / 64KiB；子进程等待有总预算，超时/超限终止进程组并回收进程。原始 stderr、异常响应和版本输出不回显；业务错误只保留数字机器码。成功数据中匹配当前令牌的字符串被替换。临时配置目录在调用结束后删除，CLI 写出的正文文件仅允许在该目录内、是普通文件且读取后总响应仍不超过 2MiB；越界路径、链接或非文本正文报错。
+
+令牌错误 `853004` / `853005` 仅允许重换企微令牌后重试一次，操作仍是白名单只读请求；不重复提交 A2A 任务。其他错误直接停止，沿用 CloudAuth 对不确定 refresh token 轮换的保护。

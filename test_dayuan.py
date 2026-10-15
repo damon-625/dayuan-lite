@@ -307,7 +307,7 @@ class DayuanTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         replies = [json.loads(x) for x in proc.stdout.splitlines()]
         self.assertEqual(len(replies), 3)
-        self.assertEqual(len(replies[1]["result"]["tools"]), 3)
+        self.assertEqual(len(replies[1]["result"]["tools"]), 4)
         self.assertNotIn("test-private-token", proc.stdout + proc.stderr)
 
 
@@ -391,7 +391,7 @@ class EntryPointTests(unittest.TestCase):
         self.assertEqual(project["project"]["scripts"], {"dayuan": "dayuan:main"})
         self.assertEqual(project["project"]["dependencies"], [])
         self.assertEqual(project["project"]["requires-python"], ">=3.9")
-        self.assertEqual(sorted(project["tool"]["setuptools"]["py-modules"]), ["dayuan", "workbuddy_auth"])
+        self.assertEqual(sorted(project["tool"]["setuptools"]["py-modules"]), ["dayuan", "wecom_bridge", "workbuddy_auth"])
         self.assertNotIn("version", project["project"])
         self.assertEqual(project["tool"]["setuptools"]["dynamic"]["version"], {"attr": "dayuan.__version__"})
 
