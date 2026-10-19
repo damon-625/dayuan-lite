@@ -36,7 +36,7 @@ READ_OPERATIONS = {
     "todo-list": ("todo", "list"),
     "todo-get": ("todo", "get"),
     # 通讯录
-    "contact-get": ("contact", "user", "get"),
+    "contact-search": ("contact", "users", "search"),
     # 微盘
     "disk-list": ("disk", "files", "list"),
     "disk-get": ("disk", "files", "get"),
@@ -47,6 +47,8 @@ READ_OPERATIONS = {
     # 邮件
     "mail-search": ("mail", "search"),
     "mail-get": ("mail", "get"),
+    # 媒体
+    "media-download": ("media", "download"),
 }
 # 写操作
 WRITE_OPERATIONS = {
@@ -65,6 +67,10 @@ WRITE_OPERATIONS = {
     "sheet-append": ("sheet", "rows", "append"),
     # 普通文档
     "doc-create": ("doc", "create"),
+    # 文档管理（改名、权限、规则）
+    "doc-rename": ("doc", "names", "update"),
+    "doc-members-update": ("doc", "members", "update"),
+    "doc-rules-update": ("doc", "rules", "update"),
     # 待办
     "todo-create": ("todo", "create"),
     "todo-update": ("todo", "update"),
@@ -78,6 +84,8 @@ WRITE_OPERATIONS = {
     "calendar-delete": ("calendar", "schedules", "delete"),
     # 邮件
     "mail-send": ("mail", "send"),
+    # 媒体
+    "media-upload": ("media", "upload"),
 }
 OPERATIONS = {**READ_OPERATIONS, **WRITE_OPERATIONS}
 
@@ -178,6 +186,41 @@ def parameters(operation, value):
         if "title" not in p or not isinstance(p["title"], str) or not p["title"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
         p["title"] = p["title"].strip()
+    # contact-search 需要 keywords
+    elif operation == "contact-search":
+        keywords = p.get("keywords")
+        if not isinstance(keywords, list) or not 1 <= len(keywords) <= 10:
+            raise Error("INVALID_WECOM_PARAMETERS")
+        for keyword in keywords:
+            text(keyword, 200)
+    # media-download 需要 media_id
+    elif operation == "media-download":
+        if "media_id" not in p or not isinstance(p["media_id"], str) or not p["media_id"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # media-upload 需要 file_path 和 type
+    elif operation == "media-upload":
+        if "file_path" not in p or not isinstance(p["file_path"], str) or not p["file_path"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "type" not in p or p["type"] not in ("image", "voice", "video", "file"):
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # doc-rename 需要 docid 和 new_name
+    elif operation == "doc-rename":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "new_name" not in p or not isinstance(p["new_name"], str) or not p["new_name"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # doc-members-update 需要 docid 和 add_member_list
+    elif operation == "doc-members-update":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "add_member_list" not in p or not isinstance(p["add_member_list"], list):
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # doc-rules-update 需要 docid 和 enable_member_join_admin_check
+    elif operation == "doc-rules-update":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "enable_member_join_admin_check" not in p or not isinstance(p["enable_member_join_admin_check"], bool):
+            raise Error("INVALID_WECOM_PARAMETERS")
     # 其他新操作：不做额外校验，交给 CLI 校验
     # 限制 JSON 大小
     if len(json.dumps(p).encode()) > 65536:
