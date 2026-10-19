@@ -50,9 +50,6 @@ READ_OPERATIONS = {
     "mail-get": ("mail", "get"),
     # 媒体
     "media-download": ("media", "download"),
-    # 消息
-    "message-sessions-list": ("message", "aibot", "sessions", "list"),
-    "message-files-get": ("message", "files", "get"),
 }
 # 写操作
 WRITE_OPERATIONS = {
@@ -84,7 +81,6 @@ WRITE_OPERATIONS = {
     "todo-delete": ("todo", "delete"),
     # 消息
     "message-send": ("message", "send"),
-    "message-aibot-send": ("message", "aibot", "send"),
     # 微盘
     "disk-upload": ("disk", "files", "upload"),
     "disk-download": ("disk", "files", "download"),
