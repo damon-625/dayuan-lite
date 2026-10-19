@@ -44,6 +44,7 @@ READ_OPERATIONS = {
     # 微盘 - 只有 list 和 search 可用，其他受限
     "disk-list": ("disk", "files", "list"),
     "disk-search": ("disk", "files", "search"),
+    "disk-get": ("disk", "files", "get"),  # 获取文件详情
     # 日历
     "calendar-list": ("calendar", "schedules", "list"),
     "calendar-get": ("calendar", "schedules", "get"),
@@ -61,8 +62,10 @@ WRITE_OPERATIONS = {
     "smartsheet-records-delete": ("smartsheet", "records", "delete"),
     # 普通表格 - 只有 create 可用，write/append 受限 (640027)
     "sheet-create": ("sheet", "create"),
+    "sheet-import": ("sheet", "import"),  # 导入本地文件创建表格
     # 普通文档
     "doc-create": ("doc", "create"),
+    "doc-import": ("doc", "import"),  # 导入本地文件创建文档
     # 文档管理 - rename 和 rules-update 可用，members-update 受限 (10003)
     "doc-rename": ("doc", "names", "update"),
     "doc-rules-update": ("doc", "rules", "update"),
@@ -86,9 +89,9 @@ WRITE_OPERATIONS = {
 # 以下操作经测试确认不可用（企微接口限制），已移除：
 # - smartpage-import (893006), smartpage-pages-update (640027)
 # - smartsheet-import (CLI_FAILED)
-# - sheet-write (640027), sheet-append (640027), sheet-import (893003)
-# - doc-import (893003), doc-members-update (10003)
-# - disk-get (40073), disk-upload (640032), disk-download (893003)
+# - sheet-write (640027), sheet-append (640027), 
+# - doc-members-update (10003)
+# - disk-upload (640032), disk-download (640027)
 # - disk-rename (893003), disk-folders-create (-1)
 # - mail-search/get/send (680212 邮箱未开通)
 # - media-download (893006)
