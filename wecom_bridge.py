@@ -18,20 +18,13 @@ from workbuddy_auth import AuthError, CloudAuth
 # 操作映射：operation -> (CLI 子命令路径)
 # 只读操作
 READ_OPERATIONS = {
-    # 原有操作
+    # 文档
     "doc-search": ("doc", "search"),
     "doc-read": ("doc", "contents", "get"),
+    # 会议
     "meeting-list": ("meeting", "list"),
     "meeting-get": ("meeting", "get"),
     "meeting-search": ("meeting", "search"),
-    # 智能文档
-    "smartpage-get": ("smartpage", "pages", "get"),
-    # 智能表格
-    "smartsheet-get": ("smartsheet", "get"),
-    "smartsheet-records-list": ("smartsheet", "records", "list"),
-    # 普通表格
-    "sheet-get": ("sheet", "get"),
-    "sheet-read": ("sheet", "ranges", "get"),
     # 待办
     "todo-list": ("todo", "list"),
     "todo-get": ("todo", "get"),
@@ -39,64 +32,30 @@ READ_OPERATIONS = {
     "contact-search": ("contact", "users", "search"),
     # 微盘
     "disk-list": ("disk", "files", "list"),
-    "disk-get": ("disk", "files", "get"),
     "disk-search": ("disk", "files", "search"),
-    # 日历
+    # 日程
     "calendar-list": ("calendar", "schedules", "list"),
     "calendar-get": ("calendar", "schedules", "get"),
-    # 邮件
-    "mail-search": ("mail", "search"),
-    "mail-get": ("mail", "get"),
-    # 媒体
-    "media-download": ("media", "download"),
+    # 智能表格
+    "smartsheet-records-list": ("smartsheet", "records", "list"),
 }
 # 写操作
 WRITE_OPERATIONS = {
     # 智能文档
     "smartpage-create": ("smartpage", "create"),
-    "smartpage-import": ("smartpage", "import"),
     # 智能表格
     "smartsheet-create": ("smartsheet", "create"),
-    "smartsheet-import": ("smartsheet", "import"),
-    "smartsheet-records-add": ("smartsheet", "records", "add"),
-    "smartsheet-records-update": ("smartsheet", "records", "update"),
-    "smartsheet-records-delete": ("smartsheet", "records", "delete"),
-    # 普通表格
-    "sheet-create": ("sheet", "create"),
-    "sheet-import": ("sheet", "import"),
-    "sheet-write": ("sheet", "contents", "update"),
-    "sheet-append": ("sheet", "rows", "append"),
     # 普通文档
     "doc-create": ("doc", "create"),
-    "doc-import": ("doc", "import"),
-    # 文档管理（改名、权限、规则）
-    "doc-rename": ("doc", "names", "update"),
-    "doc-members-update": ("doc", "members", "update"),
-    "doc-rules-update": ("doc", "rules", "update"),
+    # 普通表格
+    "sheet-create": ("sheet", "create"),
     # 待办
     "todo-create": ("todo", "create"),
     "todo-update": ("todo", "update"),
     "todo-finish": ("todo", "finish"),
     "todo-delete": ("todo", "delete"),
-    # 消息
-    "message-send": ("message", "send"),
-    # 微盘
-    "disk-upload": ("disk", "files", "upload"),
-    "disk-download": ("disk", "files", "download"),
-    "disk-rename": ("disk", "files", "rename"),
-    "disk-folders-create": ("disk", "folders", "create"),
     # 会议
-    "meeting-create": ("meeting", "create"),
-    "meeting-update": ("meeting", "update"),
     "meeting-cancel": ("meeting", "cancel"),
-    # 日历
-    "calendar-create": ("calendar", "schedules", "create"),
-    "calendar-update": ("calendar", "schedules", "update"),
-    "calendar-delete": ("calendar", "schedules", "cancel"),
-    # 邮件
-    "mail-send": ("mail", "send"),
-    # 媒体
-    "media-upload": ("media", "upload"),
 }
 OPERATIONS = {**READ_OPERATIONS, **WRITE_OPERATIONS}
 
@@ -175,13 +134,6 @@ def parameters(operation, value):
         if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
         p["name"] = p["name"].strip()
-    # smartpage-import 需要 name 和 content (markdown)
-    elif operation == "smartpage-import":
-        if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-        if "content" not in p or not isinstance(p["content"], str):
-            raise Error("INVALID_WECOM_PARAMETERS")
-        p["name"] = p["name"].strip()
     # smartsheet-create 需要 name
     elif operation == "smartsheet-create":
         if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
@@ -204,35 +156,7 @@ def parameters(operation, value):
             raise Error("INVALID_WECOM_PARAMETERS")
         for keyword in keywords:
             text(keyword, 200)
-    # media-download 需要 media_id
-    elif operation == "media-download":
-        if "media_id" not in p or not isinstance(p["media_id"], str) or not p["media_id"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-    # media-upload 需要 file_path 和 type
-    elif operation == "media-upload":
-        if "file_path" not in p or not isinstance(p["file_path"], str) or not p["file_path"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-        if "type" not in p or p["type"] not in ("image", "voice", "video", "file"):
-            raise Error("INVALID_WECOM_PARAMETERS")
-    # doc-rename 需要 docid 和 new_name
-    elif operation == "doc-rename":
-        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-        if "new_name" not in p or not isinstance(p["new_name"], str) or not p["new_name"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-    # doc-members-update 需要 docid 和 add_member_list
-    elif operation == "doc-members-update":
-        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-        if "add_member_list" not in p or not isinstance(p["add_member_list"], list):
-            raise Error("INVALID_WECOM_PARAMETERS")
-    # doc-rules-update 需要 docid 和 enable_member_join_admin_check
-    elif operation == "doc-rules-update":
-        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-        if "enable_member_join_admin_check" not in p or not isinstance(p["enable_member_join_admin_check"], bool):
-            raise Error("INVALID_WECOM_PARAMETERS")
-    # 其他新操作：不做额外校验，交给 CLI 校验
+    # 其他操作：不做额外校验，交给 CLI 校验
     # 限制 JSON 大小
     if len(json.dumps(p).encode()) > 65536:
         raise Error("INVALID_WECOM_PARAMETERS")
@@ -308,13 +232,6 @@ class Bridge:
         env = {k: v for k, v in os.environ.items() if not k.startswith("WECOM_CLI_") and k != "DAYUAN_ACCESS_TOKEN"}
         with tempfile.TemporaryDirectory(prefix="dayuan-wecom-") as temp:
             env["WECOM_CLI_CONFIG_DIR"] = temp
-            # smartpage-import 需要把 content 写入临时文件
-            if operation == "smartpage-import" and "content" in p:
-                content_path = os.path.join(temp, "import-content.md")
-                with open(content_path, "w", encoding="utf-8") as f:
-                    f.write(p["content"])
-                p["file_path"] = content_path
-                del p["content"]
             code, raw = run_cli([executable, "--version"], env, temp, end)
             match = re.search(rb"wecom-cli (\d+)\.(\d+)\.(\d+)", raw)
             if code or not match or tuple(int(x) for x in match.groups()) < (1, 3, 4):
