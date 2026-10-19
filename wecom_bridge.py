@@ -23,6 +23,7 @@ READ_OPERATIONS = {
     "doc-read": ("doc", "contents", "get"),
     "meeting-list": ("meeting", "list"),
     "meeting-get": ("meeting", "get"),
+    "meeting-search": ("meeting", "search"),
     # 智能文档
     "smartpage-get": ("smartpage", "pages", "get"),
     "smartpage-blocks-list": ("smartpage", "blocks", "list"),
@@ -49,6 +50,9 @@ READ_OPERATIONS = {
     "mail-get": ("mail", "get"),
     # 媒体
     "media-download": ("media", "download"),
+    # 消息
+    "message-sessions-list": ("message", "aibot", "sessions", "list"),
+    "message-files-get": ("message", "files", "get"),
 }
 # 写操作
 WRITE_OPERATIONS = {
@@ -63,10 +67,12 @@ WRITE_OPERATIONS = {
     "smartsheet-records-delete": ("smartsheet", "records", "delete"),
     # 普通表格
     "sheet-create": ("sheet", "create"),
+    "sheet-import": ("sheet", "import"),
     "sheet-write": ("sheet", "ranges", "write"),
     "sheet-append": ("sheet", "rows", "append"),
     # 普通文档
     "doc-create": ("doc", "create"),
+    "doc-import": ("doc", "import"),
     # 文档管理（改名、权限、规则）
     "doc-rename": ("doc", "names", "update"),
     "doc-members-update": ("doc", "members", "update"),
@@ -78,6 +84,16 @@ WRITE_OPERATIONS = {
     "todo-delete": ("todo", "delete"),
     # 消息
     "message-send": ("message", "send"),
+    "message-aibot-send": ("message", "aibot", "send"),
+    # 微盘
+    "disk-upload": ("disk", "files", "upload"),
+    "disk-download": ("disk", "files", "download"),
+    "disk-rename": ("disk", "files", "rename"),
+    "disk-folders-create": ("disk", "folders", "create"),
+    # 会议
+    "meeting-create": ("meeting", "create"),
+    "meeting-update": ("meeting", "update"),
+    "meeting-cancel": ("meeting", "cancel"),
     # 日历
     "calendar-create": ("calendar", "schedules", "create"),
     "calendar-update": ("calendar", "schedules", "update"),
