@@ -32,6 +32,8 @@ READ_OPERATIONS = {
     # 智能表格
     "smartsheet-get": ("smartsheet", "get"),
     "smartsheet-sheets-list": ("smartsheet", "sheets", "list"),  # 获取子表列表，用于拿 sheet_id
+    "smartsheet-fields-list": ("smartsheet", "fields", "list"),  # 获取字段列表
+    "smartsheet-views-list": ("smartsheet", "views", "list"),  # 获取视图列表
     "smartsheet-records-list": ("smartsheet", "records", "list"),
     # 普通表格 - sheet-read 可以读取授权用户有权限的表格
     "sheet-get": ("sheet", "get"),
@@ -55,14 +57,22 @@ WRITE_OPERATIONS = {
     # 智能文档
     "smartpage-create": ("smartpage", "create"),
     "smartpage-blocks-update": ("smartpage", "blocks", "update"),  # 需要 page_id, method, mdx
+    "smartpage-pages-append": ("smartpage", "pages", "append"),  # 追加内容到页面，需要 file_path
     # 智能表格
     "smartsheet-create": ("smartsheet", "create"),
     "smartsheet-records-add": ("smartsheet", "records", "add"),
     "smartsheet-records-update": ("smartsheet", "records", "update"),
     "smartsheet-records-delete": ("smartsheet", "records", "delete"),
+    "smartsheet-fields-add": ("smartsheet", "fields", "add"),  # 添加字段
+    "smartsheet-fields-update": ("smartsheet", "fields", "update"),  # 更新字段
+    "smartsheet-fields-delete": ("smartsheet", "fields", "delete"),  # 删除字段
+    "smartsheet-views-add": ("smartsheet", "views", "add"),  # 添加视图
+    "smartsheet-views-delete": ("smartsheet", "views", "delete"),  # 删除视图
     # 普通表格 - 只有 create 可用，write/append 受限 (640027)
     "sheet-create": ("sheet", "create"),
     "sheet-import": ("sheet", "import"),  # 导入本地文件创建表格
+    "sheet-subsheets-add": ("sheet", "subsheets", "add"),  # 添加表格子表
+    "sheet-subsheets-delete": ("sheet", "subsheets", "delete"),  # 删除表格子表
     # 普通文档
     "doc-create": ("doc", "create"),
     "doc-import": ("doc", "import"),  # 导入本地文件创建文档
@@ -84,6 +94,7 @@ WRITE_OPERATIONS = {
     "calendar-delete": ("calendar", "schedules", "cancel"),
     # 媒体 - upload 可用，download 受限 (893006)
     "media-upload": ("media", "upload"),
+    "disk-rename": ("disk", "files", "rename"),  # 重命名微盘文件
 }
 
 # 以下操作经测试确认不可用（企微接口限制），已移除：
@@ -91,7 +102,7 @@ WRITE_OPERATIONS = {
 # - smartsheet-import (CLI_FAILED)
 # - sheet-write (640027), sheet-append (640027), 
 # - doc-members-update (10003)
-# - disk-upload (640032), disk-download (640027)
+# - disk-upload (640032), disk-download (640027), disk-folders-create (640032)
 # - disk-rename (893003), disk-folders-create (-1)
 # - mail-search/get/send (680212 邮箱未开通)
 # - media-download (893006)
