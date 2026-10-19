@@ -26,13 +26,12 @@ READ_OPERATIONS = {
     "meeting-search": ("meeting", "search"),
     # 智能文档
     "smartpage-get": ("smartpage", "pages", "get"),
-    "smartpage-blocks-list": ("smartpage", "blocks", "list"),
     # 智能表格
     "smartsheet-get": ("smartsheet", "get"),
     "smartsheet-records-list": ("smartsheet", "records", "list"),
     # 普通表格
     "sheet-get": ("sheet", "get"),
-    "sheet-read": ("sheet", "ranges", "read"),
+    "sheet-read": ("sheet", "ranges", "get"),
     # 待办
     "todo-list": ("todo", "list"),
     "todo-get": ("todo", "get"),
@@ -65,7 +64,7 @@ WRITE_OPERATIONS = {
     # 普通表格
     "sheet-create": ("sheet", "create"),
     "sheet-import": ("sheet", "import"),
-    "sheet-write": ("sheet", "ranges", "write"),
+    "sheet-write": ("sheet", "contents", "update"),
     "sheet-append": ("sheet", "rows", "append"),
     # 普通文档
     "doc-create": ("doc", "create"),
@@ -93,7 +92,7 @@ WRITE_OPERATIONS = {
     # 日历
     "calendar-create": ("calendar", "schedules", "create"),
     "calendar-update": ("calendar", "schedules", "update"),
-    "calendar-delete": ("calendar", "schedules", "delete"),
+    "calendar-delete": ("calendar", "schedules", "cancel"),
     # 邮件
     "mail-send": ("mail", "send"),
     # 媒体
@@ -309,6 +308,13 @@ class Bridge:
         env = {k: v for k, v in os.environ.items() if not k.startswith("WECOM_CLI_") and k != "DAYUAN_ACCESS_TOKEN"}
         with tempfile.TemporaryDirectory(prefix="dayuan-wecom-") as temp:
             env["WECOM_CLI_CONFIG_DIR"] = temp
+            # smartpage-import 需要把 content 写入临时文件
+            if operation == "smartpage-import" and "content" in p:
+                content_path = os.path.join(temp, "import-content.md")
+                with open(content_path, "w", encoding="utf-8") as f:
+                    f.write(p["content"])
+                p["file_path"] = content_path
+                del p["content"]
             code, raw = run_cli([executable, "--version"], env, temp, end)
             match = re.search(rb"wecom-cli (\d+)\.(\d+)\.(\d+)", raw)
             if code or not match or tuple(int(x) for x in match.groups()) < (1, 3, 4):
