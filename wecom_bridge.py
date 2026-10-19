@@ -29,6 +29,7 @@ READ_OPERATIONS = {
     "meeting-search": ("meeting", "search"),
     # 智能文档 - 需要是授权用户创建或有权限的文档
     "smartpage-get": ("smartpage", "pages", "get"),
+    "smartpage-databases-get": ("smartpage", "databases", "get"),  # 读取数据库信息
     # 智能表格
     "smartsheet-get": ("smartsheet", "get"),
     "smartsheet-sheets-list": ("smartsheet", "sheets", "list"),  # 获取子表列表，用于拿 sheet_id
@@ -58,6 +59,7 @@ WRITE_OPERATIONS = {
     "smartpage-create": ("smartpage", "create"),
     "smartpage-blocks-update": ("smartpage", "blocks", "update"),  # 需要 page_id, method, mdx
     "smartpage-pages-append": ("smartpage", "pages", "append"),  # 追加内容到页面，需要 file_path
+    "smartpage-pages-overwrite": ("smartpage", "pages", "overwrite"),  # 覆盖页面内容，需要 file_path
     # 智能表格
     "smartsheet-create": ("smartsheet", "create"),
     "smartsheet-records-add": ("smartsheet", "records", "add"),
@@ -68,11 +70,15 @@ WRITE_OPERATIONS = {
     "smartsheet-fields-delete": ("smartsheet", "fields", "delete"),  # 删除字段
     "smartsheet-views-add": ("smartsheet", "views", "add"),  # 添加视图
     "smartsheet-views-delete": ("smartsheet", "views", "delete"),  # 删除视图
+    "smartsheet-views-update": ("smartsheet", "views", "update"),  # 更新视图
+    "smartsheet-records-query": ("smartsheet", "records", "query"),  # SQL 查询
     # 普通表格 - 只有 create 可用，write/append 受限 (640027)
     "sheet-create": ("sheet", "create"),
     "sheet-import": ("sheet", "import"),  # 导入本地文件创建表格
     "sheet-subsheets-add": ("sheet", "subsheets", "add"),  # 添加表格子表
     "sheet-subsheets-delete": ("sheet", "subsheets", "delete"),  # 删除表格子表
+    "sheet-subsheets-copy": ("sheet", "subsheets", "copy"),  # 复制表格子表
+    "sheet-subsheets-move": ("sheet", "subsheets", "move"),  # 移动表格子表位置
     # 普通文档
     "doc-create": ("doc", "create"),
     "doc-import": ("doc", "import"),  # 导入本地文件创建文档
