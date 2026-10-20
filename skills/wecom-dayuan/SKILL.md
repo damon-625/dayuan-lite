@@ -24,10 +24,10 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 | 场景 | 命令 |
 |------|------|
 | 查消息 | `./bin/dayuan read --json '{"operation":"ask","query":"谁找我"}'` |
-| 搜通讯录 | `./bin/dayuan wecom contact-search --json '{"keywords":["damon"]}'` |
-| 搜文档 | `./bin/dayuan wecom doc-search --json '{"keywords":["周报"]}'` |
-| 创建待办 | `./bin/dayuan wecom todo-create --json '{"title":"完成评审"}'` |
-| 创建会议 | `./bin/dayuan wecom meeting-create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'` |
+| 搜通讯录 | `./bin/dayuan wecom-cli contact users search --json '{"keywords":["damon"]}'` |
+| 搜文档 | `./bin/dayuan wecom-cli doc search --json '{"keywords":["周报"]}'` |
+| 创建待办 | `./bin/dayuan wecom-cli todo create --json '{"items":[{"title":"完成评审"}]}'` |
+| 创建会议 | `./bin/dayuan wecom-cli meeting create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'` |
 
 ## Implementation
 
@@ -44,32 +44,34 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 ### wecom-cli（结构化调用）
 
-```bash
-./bin/dayuan wecom <操作名> --json '<参数>'
-```
-
-探索命令参数：
+**透传到 wecom-cli，命令格式完全一致：**
 
 ```bash
-./bin/dayuan wecom --help-cli <module>         # 查看模块子命令
-./bin/dayuan wecom --schema "<module> <cmd>"   # 查看参数 schema
+./bin/dayuan wecom-cli <module> <command> --json '<params>'
 ```
 
-参数详见各模块 references 文档。
+**探索命令（无需 --json，直接透传）：**
+
+```bash
+./bin/dayuan wecom-cli --help                    # 查看所有模块
+./bin/dayuan wecom-cli todo --help               # 查看 todo 子命令
+./bin/dayuan wecom-cli todo create --schema      # 查看 create 参数
+./bin/dayuan wecom-cli todo --doc                # 查看 todo 文档
+```
 
 ## 支持模块
 
-| 模块 | 文档 |
-|------|------|
-| 消息查询 | [dayuan-ask.md](references/dayuan-ask.md) |
-| 通讯录 | [wecom-contact.md](references/wecom-contact.md) |
-| 文档 | [wecom-doc.md](references/wecom-doc.md) |
-| 表格 | [wecom-sheet.md](references/wecom-sheet.md) |
-| 智能文档 | [wecom-smartpage.md](references/wecom-smartpage.md) |
-| 智能表格 | [wecom-smartsheet.md](references/wecom-smartsheet.md) |
-| 待办 | [wecom-todo.md](references/wecom-todo.md) |
-| 会议 | [wecom-meeting.md](references/wecom-meeting.md) |
-| 日程 | [wecom-calendar.md](references/wecom-calendar.md) |
+| 模块 | 命令前缀 | 参考文档 |
+|------|----------|----------|
+| 消息查询 | dayuan read | [dayuan-ask.md](references/dayuan-ask.md) |
+| 通讯录 | wecom-cli contact | [wecom-contact.md](references/wecom-contact.md) |
+| 文档 | wecom-cli doc | [wecom-doc.md](references/wecom-doc.md) |
+| 表格 | wecom-cli sheet | [wecom-sheet.md](references/wecom-sheet.md) |
+| 智能文档 | wecom-cli smartpage | [wecom-smartpage.md](references/wecom-smartpage.md) |
+| 智能表格 | wecom-cli smartsheet | [wecom-smartsheet.md](references/wecom-smartsheet.md) |
+| 待办 | wecom-cli todo | [wecom-todo.md](references/wecom-todo.md) |
+| 会议 | wecom-cli meeting | [wecom-meeting.md](references/wecom-meeting.md) |
+| 日程 | wecom-cli calendar | [wecom-calendar.md](references/wecom-calendar.md) |
 
 ## Common Mistakes
 
@@ -77,5 +79,5 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 |------|------|
 | `keywords` 传字符串 | 必须是数组：`["关键词"]` |
 | `userids` 传对象数组 | 必须是字符串数组：`["userid1"]` |
-| `sheet-read` 缺 `sheet_id` | 先用 `sheet-get` 获取子表 ID |
-| `smartpage-pages-append` 传 content | 必须用 `file_path` 传文件路径 |
+| `sheet ranges get` 缺 `sheet_id` | 先用 `sheet get` 获取子表 ID |
+| `smartpage pages append` 传 content | 必须用 `file_path` 传文件路径 |
