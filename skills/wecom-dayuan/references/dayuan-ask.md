@@ -5,7 +5,7 @@
 ## 自然语言对话（推荐）
 
 ```bash
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"<唯一ID>","operation":"ask","query":"<问题>"}'
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"<唯一ID>","operation":"ask","query":"<问题>"}'
 ```
 
 ### 参数
@@ -15,19 +15,18 @@
 | `request_id` | ✅ | 唯一标识（8-80字符） |
 | `operation` | ✅ | 固定 `ask` |
 | `query` | ✅ | 问题（最长 500 字符） |
-| `mode` | ❌ | `read`（默认只读）或 `write`（允许写操作） |
 
 ### 示例
 
 ```bash
 # 整理未读
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"ask-001","operation":"ask","query":"帮我整理一下未读消息"}'
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"ask-001","operation":"ask","query":"帮我整理一下未读消息"}'
 
 # 总结群聊
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"ask-002","operation":"ask","query":"总结一下今天 3P 产品群讨论了什么"}'
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"ask-002","operation":"ask","query":"总结一下今天 3P 产品群讨论了什么"}'
 
-# 启用写操作（发消息、建群等）
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"ask-003","operation":"ask","mode":"write","query":"帮我给 xxx 发一条消息：xxx"}'
+# 发消息（自动写模式）
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"ask-003","operation":"send_message","chat":"张三","content":"收到，马上处理"}'
 ```
 
 ---
@@ -37,7 +36,7 @@
 ### 搜索群聊
 
 ```bash
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"sg-001","operation":"search_groups","query":"开发","limit":10}'
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"sg-001","operation":"search_groups","query":"开发","limit":10}'
 ```
 
 | 参数 | 必填 | 说明 |
@@ -49,7 +48,7 @@
 ### 读取群消息
 
 ```bash
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"rc-001","operation":"read_chat","chat":"3P 产品 & 开发","since":"2026-10-17T00:00:00+08:00","until":"2026-10-17T23:59:59+08:00","limit":30}'
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"rc-001","operation":"read_chat","chat":"3P 产品 & 开发","since":"2026-10-17T00:00:00+08:00","until":"2026-10-17T23:59:59+08:00","limit":30}'
 ```
 
 | 参数 | 必填 | 说明 |
@@ -63,7 +62,7 @@
 ### 群内搜索
 
 ```bash
-.kiro/skills/wecom-dayuan/bin/dayuan-auth exec read --wait 120 --json '{"request_id":"sm-001","operation":"search_messages","chat":"3P 产品 & 开发","query":"发布","limit":10}'
+.kiro/skills/wecom-dayuan/bin/dayuan-auth exec chat --wait 120 --json '{"request_id":"sm-001","operation":"search_messages","chat":"3P 产品 & 开发","query":"发布","limit":10}'
 ```
 
 | 参数 | 必填 | 说明 |
