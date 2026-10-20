@@ -15,7 +15,7 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 ## 大圆 A2A 操作（9 个 operation）
 
-| operation | 说明 | 必填参数 | 需要 mode=write |
+| operation | 说明 | 必填参数 | 自动 write |
 |-----------|------|---------|----------------|
 | `ask` | 自然语言问大圆 | query | 可选 |
 | `search_messages` | 搜索消息 | chat, query | ❌ |
@@ -51,11 +51,11 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 # 搜文件
 ./bin/dayuan read --wait 30 --json '{"operation":"search_files","chat":"测试群","query":"周报"}'
 
-# 发消息（需 mode=write）
-./bin/dayuan read --wait 30 --json '{"operation":"send_message","chat":"测试群","content":"hello","mode":"write"}'
+# 发消息（自动 write 模式）
+./bin/dayuan read --wait 30 --json '{"operation":"send_message","chat":"测试群","content":"hello""}'
 
-# 建群（需 mode=write）
-./bin/dayuan read --wait 30 --json '{"operation":"create_group","group_name":"新项目群","member_ids":["user1","user2"],"mode":"write"}'
+# 建群（自动 write 模式）
+./bin/dayuan read --wait 30 --json '{"operation":"create_group","group_name":"新项目群","member_ids":["user1","user2"]"}'
 ```
 
 ## wecom-cli 操作
@@ -109,7 +109,6 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 | 问题 | 解决 |
 |------|------|
-| 写操作没加 `mode` | `create_group` 和 `send_message` 必须加 `"mode":"write"` |
 | `keywords` 传字符串 | 必须是数组：`["关键词"]` |
 | `userids` 传对象数组 | 必须是字符串数组：`["userid1"]` |
 | `sheet ranges get` 缺 `sheet_id` | 先用 `sheet get` 获取子表 ID |
