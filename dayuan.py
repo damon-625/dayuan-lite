@@ -50,7 +50,6 @@ QUERY_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["r
         "create_group",     # 创建内部群
         "send_message",     # 发消息（文字、图片、图文混排、文件）
     ]},
-    "mode": {"type": "string", "enum": ["read", "write"], "default": "read", "description": "read（只读，默认）或 write（允许写操作如发消息、建群、创建文档等）"},
     "chat": {"type": "string", "maxLength": 200}, "query": {"type": "string", "maxLength": 500},
     "since": {"type": "string"}, "until": {"type": "string"},
     "limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
@@ -330,11 +329,11 @@ class Client:
                 return self.result(p["request_id"])
             # The per-request lock protects the decision and replacement together.
             save_private(path, record)
-        conditions = {k: v for k, v in p.items() if k not in ("request_id", "mode")}
+        conditions = {k: v for k, v in p.items() if k not in ("request_id",)}
         op = p["operation"]
         # 写操作自动设为 write 模式，其他默认 read（用户可显式覆盖）
         write_ops = ("send_message", "create_group")
-        mode = p.get("mode", "write" if op in write_ops else "read")
+        mode = "write" if op in write_ops else "read"
         
         if op == "ask":
             # ask: 自然语言对话，直接把 query 传给大圆
