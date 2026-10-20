@@ -1,12 +1,12 @@
 /*
- * dayuan-auth — dayuan-lite 安全封装
+ * dayuan — dayuan-lite 安全封装
  * 
  * 安全特性：
  * 1. 用户身份只从 $PWD/.current-userid 读取，无法通过参数注入
  * 2. state-dir 路径硬编码，无法绕过
  * 3. 编译成二进制，无法修改逻辑
  * 
- * 编译：gcc -o dayuan-auth dayuan-auth.c
+ * 编译：gcc -o dayuan dayuan.c
  */
 
 #include <stdio.h>
@@ -86,13 +86,15 @@ int ensure_dir(const char *path) {
 }
 
 void print_usage() {
-    fprintf(stderr, "用法: dayuan-auth <exec|status|login|finish|renew> [参数...]\n\n");
+    fprintf(stderr, "用法: dayuan <命令> [参数...]\n\n");
     fprintf(stderr, "命令:\n");
-    fprintf(stderr, "  exec <args>  执行 dayuan 命令（自动切换用户）\n");
-    fprintf(stderr, "  status       检查当前用户授权状态\n");
-    fprintf(stderr, "  login        为当前用户发起授权\n");
-    fprintf(stderr, "  finish       完成授权流程\n");
-    fprintf(stderr, "  renew        刷新凭据\n");
+    fprintf(stderr, "  wecom <操作> --json '<参数>'   执行企微操作\n");
+    fprintf(stderr, "  wecom --help-cli <模块>        查看模块帮助\n");
+    fprintf(stderr, "  wecom --schema \"<模块> <命令>\" 查看参数 schema\n");
+    fprintf(stderr, "  read --json '<参数>'           大圆 Agent 调用\n");
+    fprintf(stderr, "  status                         检查授权状态\n");
+    fprintf(stderr, "  login                          发起授权\n");
+    fprintf(stderr, "  renew                          刷新凭据\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -120,13 +122,10 @@ int main(int argc, char *argv[]) {
     // 检查 dayuan.py 是否存在
     if (access(DAYUAN_SCRIPT, F_OK) != 0) {
         fprintf(stderr, "错误：dayuan-lite 未安装（%s 不存在）\n", DAYUAN_SCRIPT);
-        fprintf(stderr, "请先克隆：cd /home/damon/code && git clone https://github.com/lighters/dayuan-lite.git\n");
         return 1;
     }
     
-    const char *cmd = argv[1];
-    
-    // 构建参数列表
+    // 构建参数列表：python3 dayuan.py --state-dir <dir> <所有用户参数>
     char *exec_args[MAX_ARGS];
     int idx = 0;
     
@@ -135,39 +134,10 @@ int main(int argc, char *argv[]) {
     exec_args[idx++] = "--state-dir";
     exec_args[idx++] = state_dir;
     
-    if (strcmp(cmd, "exec") == 0) {
-        // 透传后续参数
-        for (int i = 2; i < argc && idx < MAX_ARGS - 1; i++) {
-            exec_args[idx++] = argv[i];
-        }
-    } else if (strcmp(cmd, "status") == 0) {
-        printf("用户: %s\n", userid);
-        printf("状态目录: %s\n", state_dir);
-        printf("---\n");
-        exec_args[idx++] = "status";
-    } else if (strcmp(cmd, "login") == 0) {
-        printf("用户: %s\n", userid);
-        printf("状态目录: %s\n", state_dir);
-        printf("---\n");
-        exec_args[idx++] = "login";
-        exec_args[idx++] = "--wait";
-        exec_args[idx++] = "300";
-    } else if (strcmp(cmd, "finish") == 0) {
-        printf("用户: %s\n", userid);
-        printf("---\n");
-        exec_args[idx++] = "finish";
-        exec_args[idx++] = "--wait";
-        exec_args[idx++] = "60";
-    } else if (strcmp(cmd, "renew") == 0) {
-        printf("用户: %s\n", userid);
-        printf("---\n");
-        exec_args[idx++] = "renew";
-    } else {
-        fprintf(stderr, "未知命令: %s\n", cmd);
-        print_usage();
-        return 1;
+    // 透传所有用户参数
+    for (int i = 1; i < argc && idx < MAX_ARGS - 1; i++) {
+        exec_args[idx++] = argv[i];
     }
-    
     exec_args[idx] = NULL;
     
     // 执行

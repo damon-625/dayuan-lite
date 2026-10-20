@@ -23,18 +23,18 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 | 场景 | 命令 |
 |------|------|
-| 查消息 | `./bin/dayuan exec read --json '{"operation":"ask","query":"谁找我"}'` |
-| 搜通讯录 | `./bin/dayuan exec wecom contact-search --json '{"keywords":["damon"]}'` |
-| 搜文档 | `./bin/dayuan exec wecom doc-search --json '{"keywords":["周报"]}'` |
-| 创建待办 | `./bin/dayuan exec wecom todo-create --json '{"title":"完成评审"}'` |
-| 创建会议 | `./bin/dayuan exec wecom meeting-create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'` |
+| 查消息 | `./bin/dayuan read --json '{"operation":"ask","query":"谁找我"}'` |
+| 搜通讯录 | `./bin/dayuan wecom contact-search --json '{"keywords":["damon"]}'` |
+| 搜文档 | `./bin/dayuan wecom doc-search --json '{"keywords":["周报"]}'` |
+| 创建待办 | `./bin/dayuan wecom todo-create --json '{"title":"完成评审"}'` |
+| 创建会议 | `./bin/dayuan wecom meeting-create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'` |
 
 ## Implementation
 
 ### 大圆 Agent（自然语言）
 
 ```bash
-./bin/dayuan exec read --wait 120 --json '{
+./bin/dayuan read --wait 120 --json '{
   "operation": "ask",
   "query": "帮我看看最近谁找我"
 }'
@@ -45,14 +45,14 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 ### wecom-cli（结构化调用）
 
 ```bash
-./bin/dayuan exec wecom <操作名> --json '<参数>'
+./bin/dayuan wecom <操作名> --json '<参数>'
 ```
 
 探索命令参数：
 
 ```bash
-./bin/dayuan exec wecom --help-cli <module>    # 查看模块子命令
-./bin/dayuan exec wecom --schema "<module> <cmd>"  # 查看参数 schema
+./bin/dayuan wecom --help-cli <module>         # 查看模块子命令
+./bin/dayuan wecom --schema "<module> <cmd>"   # 查看参数 schema
 ```
 
 参数详见各模块 references 文档。
