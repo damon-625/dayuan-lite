@@ -29,13 +29,6 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 | 创建待办 | `./bin/dayuan exec wecom todo-create --json '{"title":"完成评审"}'` |
 | 创建会议 | `./bin/dayuan exec wecom meeting-create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'` |
 
-## Installation
-
-1. 修改 `src/dayuan-auth.c` 中的硬编码路径
-2. 编译：`gcc -o bin/dayuan src/dayuan-auth.c`
-3. 工作区创建 `.current-userid` 文件，写入用户标识
-4. 执行 `./bin/dayuan login` 扫码授权
-
 ## Implementation
 
 ### 大圆 Agent（自然语言）
