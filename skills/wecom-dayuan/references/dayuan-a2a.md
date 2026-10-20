@@ -20,28 +20,28 @@
 
 ```bash
 # 自然语言问
-dayuan-auth exec chat --wait 120 --json '{"operation":"ask","query":"帮我整理未读"}'
+./bin/dayuan chat --wait 120 --json '{"operation":"ask","query":"帮我整理未读"}'
 
 # 未读整理
-dayuan-auth exec chat --wait 60 --json '{"operation":"list_unread"}'
+./bin/dayuan chat --wait 60 --json '{"operation":"list_unread"}'
 
 # 搜联系人
-dayuan-auth exec chat --wait 30 --json '{"operation":"search_contacts","query":"张三"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_contacts","query":"张三"}'
 
 # 搜群
-dayuan-auth exec chat --wait 30 --json '{"operation":"search_groups","query":"产品"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_groups","query":"产品"}'
 
 # 读群消息
-dayuan-auth exec chat --wait 60 --json '{"operation":"read_chat","chat":"3P 产品 & 开发","limit":30}'
+./bin/dayuan chat --wait 60 --json '{"operation":"read_chat","chat":"3P 产品 & 开发","limit":30}'
 
 # 群内搜消息
-dayuan-auth exec chat --wait 30 --json '{"operation":"search_messages","chat":"3P 产品 & 开发","query":"发布"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_messages","chat":"3P 产品 & 开发","query":"发布"}'
 
 # 发消息
-dayuan-auth exec chat --wait 30 --json '{"operation":"send_message","chat":"张三","content":"收到"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"send_message","chat":"张三","content":"收到"}'
 
 # 创建群
-dayuan-auth exec chat --wait 30 --json '{"operation":"create_group","group_name":"测试群","member_ids":["user1","user2"]}'
+./bin/dayuan chat --wait 30 --json '{"operation":"create_group","group_name":"测试群","member_ids":["user1","user2"]}'
 ```
 
 ## 说明
