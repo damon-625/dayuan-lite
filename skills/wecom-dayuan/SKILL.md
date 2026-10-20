@@ -51,8 +51,8 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 探索命令参数：
 
 ```bash
-wecom-cli <module> --help        # 查看子命令
-wecom-cli <module> <cmd> --schema  # 查看参数 schema
+./bin/dayuan exec wecom <module> --help        # 查看子命令
+./bin/dayuan exec wecom <module> <cmd> --schema  # 查看参数 schema
 ```
 
 ## 支持模块
