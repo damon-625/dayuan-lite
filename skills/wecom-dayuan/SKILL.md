@@ -48,6 +48,13 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 ./bin/dayuan exec wecom <操作名> --json '<参数>'
 ```
 
+探索命令参数：
+
+```bash
+./bin/dayuan exec wecom --help-cli <module>    # 查看模块子命令
+./bin/dayuan exec wecom --schema "<module> <cmd>"  # 查看参数 schema
+```
+
 参数详见各模块 references 文档。
 
 ## 支持模块

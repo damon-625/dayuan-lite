@@ -491,9 +491,11 @@ def build_parser():
     result.add_argument("request_id")
     result.add_argument("--wait", type=int, default=0, metavar="N", help="Poll for at most N seconds (0-%d)" % CLI_MAX_WAIT)
     bridge = sub.add_parser("wecom", parents=[common], help="Execute wecom-cli operations using automatically renewed user authorization")
-    bridge.add_argument("operation", help="Operation name (e.g., doc-search, smartpage-create, todo-list)")
-    bridge.add_argument("--json", required=True, help="Parameters JSON, or - to read stdin")
+    bridge.add_argument("operation", nargs="?", help="Operation name (e.g., doc-search, smartpage-create, todo-list)")
+    bridge.add_argument("--json", help="Parameters JSON, or - to read stdin")
     bridge.add_argument("--wecom-cli", help="Trusted official CLI executable (default: $DAYUAN_WECOM_CLI or wecom-cli)")
+    bridge.add_argument("--help-cli", metavar="MODULE", help="Show wecom-cli help for a module (e.g., todo, doc, sheet)")
+    bridge.add_argument("--schema", metavar="CMD", help="Show wecom-cli schema for a command (e.g., 'todo create', 'doc search')")
     sub.add_parser("serve", parents=[common], help="MCP stdio server")
     sub.add_parser("import-workbuddy-auth", parents=[common], help="One-time import of existing WeCom authorization; not used at runtime")
     return parser
@@ -513,6 +515,26 @@ def main(argv=None):
             return
         if args.command == "wecom":
             from wecom_bridge import Bridge
+            # Handle --help-cli and --schema (passthrough to wecom-cli)
+            if args.help_cli or args.schema:
+                import shutil
+                executable = shutil.which(args.wecom_cli or os.environ.get("DAYUAN_WECOM_CLI", "wecom-cli"))
+                if not executable:
+                    raise Error("WECOM_CLI_NOT_FOUND")
+                if args.help_cli:
+                    cmd = [executable, args.help_cli, "--help"]
+                else:
+                    parts = args.schema.split()
+                    cmd = [executable] + parts + ["--schema"]
+                import subprocess
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                print(result.stdout or result.stderr)
+                sys.exit(result.returncode)
+            # Normal operation
+            if not args.operation:
+                raise Error("operation is required (or use --help-cli/--schema)")
+            if not args.json:
+                raise Error("--json is required")
             raw = sys.stdin.read(65537) if args.json == "-" else args.json
             if len(raw.encode()) > 65536:
                 raise Error("INVALID_WECOM_PARAMETERS")
