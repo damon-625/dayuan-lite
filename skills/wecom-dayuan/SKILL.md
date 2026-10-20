@@ -5,44 +5,60 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 # wecom-dayuan
 
-操作企业微信：消息查询、文档表格、待办、会议、日程、通讯录。
+操作企业微信：消息查询、未读整理、联系人搜索、建群发消息、文档表格、待办、会议、日程。
 
 ## Overview
 
-通过大圆 Agent（自然语言）和 wecom-cli（结构化调用）操作企业微信。大圆适合查消息，wecom-cli 适合操作文档/表格/待办/会议。
+两种调用方式：
+1. **大圆 A2A**（`dayuan read`）：消息相关操作，9 个 operation
+2. **wecom-cli**（`dayuan wecom-cli`）：文档/表格/待办/会议等结构化操作
 
-## When to Use
+## 大圆 A2A 操作（9 个 operation）
 
-- 查企微消息、未读、谁找我
-- 搜索/创建/编辑文档、表格、智能文档、智能表格
-- 创建/完成/删除待办
-- 创建/取消会议、查询日程
-- 搜索通讯录联系人
+| operation | 说明 | 必填参数 | 需要 mode=write |
+|-----------|------|---------|----------------|
+| `ask` | 自然语言问大圆 | query | 可选 |
+| `search_messages` | 搜索消息 | chat, query | ❌ |
+| `read_chat` | 读取消息 | chat | ❌ |
+| `search_files` | 聊天文件搜索 | chat, query | ❌ |
+| `list_unread` | 未读整理（按优先级分档） | - | ❌ |
+| `search_groups` | 搜群 | query | ❌ |
+| `search_contacts` | 搜联系人 | query | ❌ |
+| `create_group` | 建群 | group_name, member_ids | ✅ |
+| `send_message` | 发消息 | chat, content/file_path | ✅ |
 
-## Quick Reference
-
-| 场景 | 命令 |
-|------|------|
-| 查消息 | `./bin/dayuan read --json '{"operation":"ask","query":"谁找我"}'` |
-| 搜通讯录 | `./bin/dayuan wecom-cli contact users search --json '{"keywords":["damon"]}'` |
-| 搜文档 | `./bin/dayuan wecom-cli doc search --json '{"keywords":["周报"]}'` |
-| 创建待办 | `./bin/dayuan wecom-cli todo create --json '{"items":[{"title":"完成评审"}]}'` |
-| 创建会议 | `./bin/dayuan wecom-cli meeting create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'` |
-
-## Implementation
-
-### 大圆 Agent（自然语言）
+### 示例
 
 ```bash
-./bin/dayuan read --wait 120 --json '{
-  "operation": "ask",
-  "query": "帮我看看最近谁找我"
-}'
+# 自然语言问
+./bin/dayuan read --wait 30 --json '{"operation":"ask","query":"谁找我"}'
+
+# 未读整理
+./bin/dayuan read --wait 30 --json '{"operation":"list_unread"}'
+
+# 搜联系人
+./bin/dayuan read --wait 30 --json '{"operation":"search_contacts","query":"张三"}'
+
+# 搜群
+./bin/dayuan read --wait 30 --json '{"operation":"search_groups","query":"技术群"}'
+
+# 读消息
+./bin/dayuan read --wait 30 --json '{"operation":"read_chat","chat":"测试群","limit":20}'
+
+# 搜消息
+./bin/dayuan read --wait 30 --json '{"operation":"search_messages","chat":"测试群","query":"部署"}'
+
+# 搜文件
+./bin/dayuan read --wait 30 --json '{"operation":"search_files","chat":"测试群","query":"周报"}'
+
+# 发消息（需 mode=write）
+./bin/dayuan read --wait 30 --json '{"operation":"send_message","chat":"测试群","content":"hello","mode":"write"}'
+
+# 建群（需 mode=write）
+./bin/dayuan read --wait 30 --json '{"operation":"create_group","group_name":"新项目群","member_ids":["user1","user2"],"mode":"write"}'
 ```
 
-详见 [dayuan-ask.md](references/dayuan-ask.md)
-
-### wecom-cli（结构化调用）
+## wecom-cli 操作
 
 **透传到 wecom-cli，命令格式完全一致：**
 
@@ -59,12 +75,28 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 ./bin/dayuan wecom-cli todo --doc                # 查看 todo 文档
 ```
 
+### 常用示例
+
+```bash
+# 搜通讯录
+./bin/dayuan wecom-cli contact users search --json '{"keywords":["damon"]}'
+
+# 搜文档
+./bin/dayuan wecom-cli doc search --json '{"keywords":["周报"]}'
+
+# 创建待办
+./bin/dayuan wecom-cli todo create --json '{"items":[{"title":"完成评审"}]}'
+
+# 创建会议
+./bin/dayuan wecom-cli meeting create --json '{"subject":"周会","begin_time":"2026-10-20 14:00:00","end_time":"2026-10-20 15:00:00"}'
+```
+
 ## 支持模块
 
 | 模块 | 命令前缀 | 参考文档 |
 |------|----------|----------|
-| 消息查询 | dayuan read | [dayuan-ask.md](references/dayuan-ask.md) |
-| 通讯录 | wecom-cli contact | [wecom-contact.md](references/wecom-contact.md) |
+| 消息/未读/联系人/建群/发消息 | dayuan read | [dayuan-ask.md](references/dayuan-ask.md) |
+| 通讯录（详细） | wecom-cli contact | [wecom-contact.md](references/wecom-contact.md) |
 | 文档 | wecom-cli doc | [wecom-doc.md](references/wecom-doc.md) |
 | 表格 | wecom-cli sheet | [wecom-sheet.md](references/wecom-sheet.md) |
 | 智能文档 | wecom-cli smartpage | [wecom-smartpage.md](references/wecom-smartpage.md) |
@@ -77,6 +109,7 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 | 问题 | 解决 |
 |------|------|
+| 写操作没加 `mode` | `create_group` 和 `send_message` 必须加 `"mode":"write"` |
 | `keywords` 传字符串 | 必须是数组：`["关键词"]` |
 | `userids` 传对象数组 | 必须是字符串数组：`["userid1"]` |
 | `sheet ranges get` 缺 `sheet_id` | 先用 `sheet get` 获取子表 ID |
