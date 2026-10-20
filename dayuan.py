@@ -549,9 +549,9 @@ def build_parser():
     sub.add_parser("renew", parents=[common], help="Refresh the account session and exchange a new WeCom token")
     sub.add_parser("wecom-login", parents=[common], help="Show the WeCom authorization page").add_argument("--open", action="store_true", help="Open it in the system browser")
     sub.add_parser("status", parents=[common], help="Local configuration and authorization status; no network request")
-    read = sub.add_parser("read", parents=[common], help="Submit a read-only query")
-    read.add_argument("--json", required=True, help="Query JSON, or - to read stdin")
-    read.add_argument("--wait", type=int, default=0, metavar="N", help="Poll the same request_id for at most N seconds (0-%d)" % CLI_MAX_WAIT)
+    chat = sub.add_parser("chat", parents=[common], help="Chat with DaYuan Agent (9 operations)")
+    chat.add_argument("--json", required=True, help="Query JSON, or - to read stdin")
+    chat.add_argument("--wait", type=int, default=0, metavar="N", help="Poll the same request_id for at most N seconds (0-%d)" % CLI_MAX_WAIT)
     result = sub.add_parser("result", parents=[common], help="Read the result of a submitted query")
     result.add_argument("request_id")
     result.add_argument("--wait", type=int, default=0, metavar="N", help="Poll for at most N seconds (0-%d)" % CLI_MAX_WAIT)
@@ -623,7 +623,7 @@ def main(argv=None):
                 value["state_dir"] = str(args.state_dir)
                 if hint:
                     value["migration_hint"] = hint
-            elif args.command == "read":
+            elif args.command == "chat":
                 seconds = wait_seconds(args.wait, CLI_MAX_WAIT)
                 value = client.read(json.loads(sys.stdin.read(65537) if args.json == "-" else args.json), seconds)
             else:

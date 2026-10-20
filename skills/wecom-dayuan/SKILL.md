@@ -10,7 +10,7 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 ## Overview
 
 两种调用方式：
-1. **大圆 A2A**（`dayuan read`）：消息相关操作，9 个 operation
+1. **大圆 A2A**（`dayuan chat`）：消息相关操作，9 个 operation
 2. **wecom-cli**（`dayuan wecom-cli`）：文档/表格/待办/会议等结构化操作
 
 ## 大圆 A2A 操作（9 个 operation）
@@ -31,31 +31,31 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 ```bash
 # 自然语言问
-./bin/dayuan read --wait 30 --json '{"operation":"ask","query":"谁找我"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"ask","query":"谁找我"}'
 
 # 未读整理
-./bin/dayuan read --wait 30 --json '{"operation":"list_unread"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"list_unread"}'
 
 # 搜联系人
-./bin/dayuan read --wait 30 --json '{"operation":"search_contacts","query":"张三"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_contacts","query":"张三"}'
 
 # 搜群
-./bin/dayuan read --wait 30 --json '{"operation":"search_groups","query":"技术群"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_groups","query":"技术群"}'
 
 # 读消息
-./bin/dayuan read --wait 30 --json '{"operation":"read_chat","chat":"测试群","limit":20}'
+./bin/dayuan chat --wait 30 --json '{"operation":"read_chat","chat":"测试群","limit":20}'
 
 # 搜消息
-./bin/dayuan read --wait 30 --json '{"operation":"search_messages","chat":"测试群","query":"部署"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_messages","chat":"测试群","query":"部署"}'
 
 # 搜文件
-./bin/dayuan read --wait 30 --json '{"operation":"search_files","chat":"测试群","query":"周报"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"search_files","chat":"测试群","query":"周报"}'
 
 # 发消息
-./bin/dayuan read --wait 30 --json '{"operation":"send_message","chat":"测试群","content":"hello"}'
+./bin/dayuan chat --wait 30 --json '{"operation":"send_message","chat":"测试群","content":"hello"}'
 
 # 建群
-./bin/dayuan read --wait 30 --json '{"operation":"create_group","group_name":"新项目群","member_ids":["user1","user2"]}'
+./bin/dayuan chat --wait 30 --json '{"operation":"create_group","group_name":"新项目群","member_ids":["user1","user2"]}'
 ```
 
 ## wecom-cli 操作
@@ -94,7 +94,7 @@ description: "Use when querying WeChat Work messages, creating/editing documents
 
 | 模块 | 命令前缀 |
 |------|----------|
-| 消息/未读/联系人/建群/发消息 | dayuan read |
+| 消息/未读/联系人/建群/发消息 | dayuan chat |
 | 通讯录 | wecom-cli contact |
 | 文档 | wecom-cli doc |
 | 表格 | wecom-cli sheet |
