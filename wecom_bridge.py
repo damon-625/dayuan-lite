@@ -18,7 +18,7 @@ from workbuddy_auth import AuthError, CloudAuth
 # 操作映射：operation -> (CLI 子命令路径)
 # 2026-10-19 根据实际测试结果精简，只保留确认可用的操作
 
-# 只读操作 (17个)
+# 只读操作 (26个)
 READ_OPERATIONS = {
     # 文档搜索和读取
     "doc-search": ("doc", "search"),
@@ -27,6 +27,8 @@ READ_OPERATIONS = {
     "meeting-list": ("meeting", "list"),
     "meeting-get": ("meeting", "get"),
     "meeting-search": ("meeting", "search"),
+    "meeting-original-get": ("meeting", "original", "get"),  # 会议转写原文
+    "meeting-rooms-search": ("meeting", "rooms", "search"),  # 会议室搜索
     # 智能文档 - 需要是授权用户创建或有权限的文档
     "smartpage-get": ("smartpage", "pages", "get"),
     "smartpage-databases-get": ("smartpage", "databases", "get"),  # 读取数据库信息
@@ -36,6 +38,7 @@ READ_OPERATIONS = {
     "smartsheet-fields-list": ("smartsheet", "fields", "list"),  # 获取字段列表
     "smartsheet-views-list": ("smartsheet", "views", "list"),  # 获取视图列表
     "smartsheet-records-list": ("smartsheet", "records", "list"),
+    "smartsheet-charts-list": ("smartsheet", "charts", "list"),  # 图表列表
     # 普通表格 - sheet-read 可以读取授权用户有权限的表格
     "sheet-get": ("sheet", "get"),
     "sheet-read": ("sheet", "ranges", "get"),
@@ -44,24 +47,27 @@ READ_OPERATIONS = {
     "todo-get": ("todo", "get"),
     # 通讯录
     "contact-search": ("contact", "users", "search"),
-    # 微盘 - 只有 list 和 search 可用，其他受限
-    "disk-list": ("disk", "files", "list"),
-    "disk-search": ("disk", "files", "search"),
-    "disk-get": ("disk", "files", "get"),  # 获取文件详情
     # 日历
     "calendar-list": ("calendar", "schedules", "list"),
     "calendar-get": ("calendar", "schedules", "get"),
+    "calendar-search": ("calendar", "schedules", "search"),  # 日程搜索
+    "calendar-free-list": ("calendar", "schedules", "free", "list"),  # 忙闲查询
 }
 
-# 写操作 (22个)
+# 写操作 (42个)
 WRITE_OPERATIONS = {
     # 智能文档
     "smartpage-create": ("smartpage", "create"),
+    "smartpage-import": ("smartpage", "import"),  # 导入 markdown 创建智能文档
     "smartpage-blocks-update": ("smartpage", "blocks", "update"),  # 需要 page_id, method, mdx
     "smartpage-pages-append": ("smartpage", "pages", "append"),  # 追加内容到页面，需要 file_path
     "smartpage-pages-overwrite": ("smartpage", "pages", "overwrite"),  # 覆盖页面内容，需要 file_path
+    "smartpage-pages-update": ("smartpage", "pages", "update"),  # 页面增删改（创建/删除/重命名/移动）
+    "smartpage-files-upload": ("smartpage", "files", "upload"),  # 上传文件到智能文档
+    "smartpage-images-upload": ("smartpage", "images", "upload"),  # 上传图片到智能文档
     # 智能表格
     "smartsheet-create": ("smartsheet", "create"),
+    "smartsheet-import": ("smartsheet", "import"),  # 导入 xlsx 创建智能表格
     "smartsheet-records-add": ("smartsheet", "records", "add"),
     "smartsheet-records-update": ("smartsheet", "records", "update"),
     "smartsheet-records-delete": ("smartsheet", "records", "delete"),
@@ -72,19 +78,34 @@ WRITE_OPERATIONS = {
     "smartsheet-views-delete": ("smartsheet", "views", "delete"),  # 删除视图
     "smartsheet-views-update": ("smartsheet", "views", "update"),  # 更新视图
     "smartsheet-records-query": ("smartsheet", "records", "query"),  # SQL 查询
-    # 普通表格 - 只有 create 可用，write/append 受限 (640027)
+    "smartsheet-sheets-add": ("smartsheet", "sheets", "add"),  # 新增子表
+    "smartsheet-sheets-delete": ("smartsheet", "sheets", "delete"),  # 删除子表
+    "smartsheet-sheets-update": ("smartsheet", "sheets", "update"),  # 更新子表
+    "smartsheet-charts-add": ("smartsheet", "charts", "add"),  # 新增图表
+    "smartsheet-charts-update": ("smartsheet", "charts", "update"),  # 更新图表
+    "smartsheet-charts-delete": ("smartsheet", "charts", "delete"),  # 删除图表
+    "smartsheet-files-upload": ("smartsheet", "files", "upload"),  # 上传文件到智能表格
+    "smartsheet-images-upload": ("smartsheet", "images", "upload"),  # 上传图片到智能表格
+    # 普通表格
     "sheet-create": ("sheet", "create"),
     "sheet-import": ("sheet", "import"),  # 导入本地文件创建表格
     "sheet-subsheets-add": ("sheet", "subsheets", "add"),  # 添加表格子表
     "sheet-subsheets-delete": ("sheet", "subsheets", "delete"),  # 删除表格子表
     "sheet-subsheets-copy": ("sheet", "subsheets", "copy"),  # 复制表格子表
     "sheet-subsheets-move": ("sheet", "subsheets", "move"),  # 移动表格子表位置
+    "sheet-subsheets-rename": ("sheet", "subsheets", "rename"),  # 重命名子表
+    "sheet-subsheets-visible": ("sheet", "subsheets", "visible"),  # 设置子表可见性
+    "sheet-contents-update": ("sheet", "contents", "update"),  # 写入表格内容
+    "sheet-rows-append": ("sheet", "rows", "append"),  # 追加一行数据
     # 普通文档
     "doc-create": ("doc", "create"),
     "doc-import": ("doc", "import"),  # 导入本地文件创建文档
+    "doc-contents-append": ("doc", "contents", "append"),  # 追加文档内容
+    "doc-contents-overwrite": ("doc", "contents", "overwrite"),  # 覆盖文档内容
     # 文档管理 - rename 和 rules-update 可用，members-update 受限 (10003)
     "doc-rename": ("doc", "names", "update"),
     "doc-rules-update": ("doc", "rules", "update"),
+    "doc-members-update": ("doc", "members", "update"),  # 添加协作成员
     # 待办
     "todo-create": ("todo", "create"),
     "todo-update": ("todo", "update"),
@@ -98,12 +119,10 @@ WRITE_OPERATIONS = {
     "calendar-create": ("calendar", "schedules", "create"),  # 参数: subject, begin_time, end_time
     "calendar-update": ("calendar", "schedules", "update"),
     "calendar-delete": ("calendar", "schedules", "cancel"),
-    # 媒体 - upload 可用，download 受限 (893006)
-    "media-upload": ("media", "upload"),
-    "disk-rename": ("disk", "files", "rename"),  # 重命名微盘文件
 }
 
 # 以下操作经测试确认不可用（企微接口限制），已移除：
+# - message-aibot-send (853006 企业未开通 AI Bot 发消息能力)
 # - smartpage-import (893006), smartpage-pages-update (640027)
 # - smartsheet-import (CLI_FAILED)
 # - sheet-write (640027), sheet-append (640027), 
@@ -184,17 +203,16 @@ def parameters(operation, value):
                 if "sub_meeting_id" in item:
                     text(item["sub_meeting_id"])
     
-    # 新操作：基础校验，具体参数交给 CLI 校验
     # smartpage-create 需要 name
     elif operation == "smartpage-create":
         if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
         p["name"] = p["name"].strip()
-    # smartpage-import 需要 name 和 content (markdown)
+    # smartpage-import 需要 name 和 file_path (markdown 文件路径)
     elif operation == "smartpage-import":
         if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
-        if "content" not in p or not isinstance(p["content"], str):
+        if "file_path" not in p and "content_path" not in p:
             raise Error("INVALID_WECOM_PARAMETERS")
         p["name"] = p["name"].strip()
     # smartsheet-create 需要 name
@@ -202,16 +220,57 @@ def parameters(operation, value):
         if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
         p["name"] = p["name"].strip()
+    # smartsheet-import 需要 name (file_path/media_id 可选)
+    elif operation == "smartsheet-import":
+        if "name" not in p or not isinstance(p["name"], str) or not p["name"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        p["name"] = p["name"].strip()
+    # sheet-subsheets-rename 需要 docid, sheet_id, title
+    elif operation == "sheet-subsheets-rename":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "sheet_id" not in p or not isinstance(p["sheet_id"], str) or not p["sheet_id"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "title" not in p or not isinstance(p["title"], str) or not p["title"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # sheet-subsheets-visible 需要 docid, sheet_id, is_visible
+    elif operation == "sheet-subsheets-visible":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "sheet_id" not in p or not isinstance(p["sheet_id"], str) or not p["sheet_id"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "is_visible" not in p or not isinstance(p["is_visible"], bool):
+            raise Error("INVALID_WECOM_PARAMETERS")
     # sheet-create 和 doc-create 需要 doc_name（CLI 参数名）
     elif operation in ("sheet-create", "doc-create"):
         if "doc_name" not in p or not isinstance(p["doc_name"], str) or not p["doc_name"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
         p["doc_name"] = p["doc_name"].strip()
-    # todo-create 需要基本信息
+    # todo-create 支持两种格式:
+    # 1. 简化格式: {"title": "...", "follower_ids": [...]} → 自动转成 items 数组
+    # 2. 完整格式: {"items": [{"title": "...", "follower_ids": [...]}]}
     elif operation == "todo-create":
-        if "title" not in p or not isinstance(p["title"], str) or not p["title"].strip():
+        if "items" in p:
+            # 完整格式，校验 items 数组
+            if not isinstance(p["items"], list) or not p["items"]:
+                raise Error("INVALID_WECOM_PARAMETERS")
+            for item in p["items"]:
+                if not isinstance(item, dict) or "title" not in item:
+                    raise Error("INVALID_WECOM_PARAMETERS")
+        elif "title" in p:
+            # 简化格式，转成 items 数组
+            if not isinstance(p["title"], str) or not p["title"].strip():
+                raise Error("INVALID_WECOM_PARAMETERS")
+            item = {"title": p["title"].strip()}
+            if "description" in p:
+                item["description"] = p["description"]
+            if "follower_ids" in p:
+                item["follower_ids"] = p["follower_ids"]
+            if "deadline" in p:
+                item["deadline"] = p["deadline"]
+            p = {"items": [item]}
+        else:
             raise Error("INVALID_WECOM_PARAMETERS")
-        p["title"] = p["title"].strip()
     # contact-search 需要 keywords
     elif operation == "contact-search":
         keywords = p.get("keywords")
@@ -219,16 +278,6 @@ def parameters(operation, value):
             raise Error("INVALID_WECOM_PARAMETERS")
         for keyword in keywords:
             text(keyword, 200)
-    # media-download 需要 media_id
-    elif operation == "media-download":
-        if "media_id" not in p or not isinstance(p["media_id"], str) or not p["media_id"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-    # media-upload 需要 file_path 和 type
-    elif operation == "media-upload":
-        if "file_path" not in p or not isinstance(p["file_path"], str) or not p["file_path"].strip():
-            raise Error("INVALID_WECOM_PARAMETERS")
-        if "type" not in p or p["type"] not in ("image", "voice", "video", "file"):
-            raise Error("INVALID_WECOM_PARAMETERS")
     # doc-rename 需要 docid 和 new_name
     elif operation == "doc-rename":
         if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
@@ -246,6 +295,77 @@ def parameters(operation, value):
         if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
         if "enable_member_join_admin_check" not in p or not isinstance(p["enable_member_join_admin_check"], bool):
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # calendar-search 需要 keywords
+    elif operation == "calendar-search":
+        keywords = p.get("keywords")
+        if not isinstance(keywords, list) or not 1 <= len(keywords) <= 10:
+            raise Error("INVALID_WECOM_PARAMETERS")
+        for keyword in keywords:
+            text(keyword, 200)
+    # calendar-free-list 需要 userids, begin_time, end_time
+    elif operation == "calendar-free-list":
+        userids = p.get("userids")
+        if not isinstance(userids, list) or len(userids) < 1:
+            raise Error("INVALID_WECOM_PARAMETERS")
+        for uid in userids:
+            if not isinstance(uid, str) or not uid.strip():
+                raise Error("INVALID_WECOM_PARAMETERS")
+        try:
+            dates = [datetime.strptime(text(p.get(k), 19), "%Y-%m-%d %H:%M:%S") for k in ("begin_time", "end_time")]
+        except ValueError:
+            raise Error("INVALID_WECOM_PARAMETERS") from None
+        if not 0 < (dates[1] - dates[0]).total_seconds() <= 31 * 86400:
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # meeting-rooms-search 需要 begin_time 和 end_time
+    elif operation == "meeting-rooms-search":
+        try:
+            dates = [datetime.strptime(text(p.get(k), 19), "%Y-%m-%d %H:%M:%S") for k in ("begin_time", "end_time")]
+        except ValueError:
+            raise Error("INVALID_WECOM_PARAMETERS") from None
+        if not 0 < (dates[1] - dates[0]).total_seconds() <= 24 * 3600:  # 最多查1天
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # meeting-original-get 需要 meeting_id 或 url
+    elif operation == "meeting-original-get":
+        if "meeting_id" not in p and "url" not in p:
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # doc-contents-append/overwrite 需要 docid 和 content
+    elif operation in ("doc-contents-append", "doc-contents-overwrite"):
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "content" not in p or not isinstance(p["content"], str):
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # sheet-contents-update 需要 docid, sheet_id, grid_data
+    elif operation == "sheet-contents-update":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "sheet_id" not in p or not isinstance(p["sheet_id"], str) or not p["sheet_id"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "grid_data" not in p:
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # sheet-rows-append 需要 docid, sheet_id, row
+    elif operation == "sheet-rows-append":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "sheet_id" not in p or not isinstance(p["sheet_id"], str) or not p["sheet_id"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "row" not in p:
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # smartsheet-sheets-add 需要 docid 和 sheet_title
+    elif operation == "smartsheet-sheets-add":
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "sheet_title" not in p or not isinstance(p["sheet_title"], str) or not p["sheet_title"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # smartpage-pages-update 需要 docid
+    elif operation == "smartpage-pages-update":
+        if "docid" not in p and "url" not in p:
+            raise Error("INVALID_WECOM_PARAMETERS")
+    # smartpage/smartsheet files/images upload 需要 docid 和 file_path
+    elif operation in ("smartpage-files-upload", "smartpage-images-upload", "smartsheet-files-upload", "smartsheet-images-upload"):
+        if "docid" not in p or not isinstance(p["docid"], str) or not p["docid"].strip():
+            raise Error("INVALID_WECOM_PARAMETERS")
+        if "file_path" not in p or not isinstance(p["file_path"], str) or not p["file_path"].strip():
             raise Error("INVALID_WECOM_PARAMETERS")
     # 其他新操作：不做额外校验，交给 CLI 校验
     # 限制 JSON 大小
